@@ -1,5 +1,6 @@
 package org.nd4j.linalg.api.ops.impl.shape;
 
+import com.sun.tools.javac.util.ArrayUtils;
 import lombok.val;
 import onnx.OnnxProto3;
 import org.nd4j.autodiff.samediff.SDVariable;
@@ -12,10 +13,7 @@ import org.tensorflow.framework.AttrValue;
 import org.tensorflow.framework.GraphDef;
 import org.tensorflow.framework.NodeDef;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Stacks n input tensors of same shape to tensor of rank n + 1.
@@ -65,5 +63,17 @@ public class ParallelStack extends DynamicCustomOp {
         ret.put(tensorflowName(), map);
         return ret;
     }
-    
+
+    @Override
+    public List<SDVariable> doDiff(List<SDVariable> i_v) {
+        SDVariable[] grads = args();
+        int numInputs = grads.length;
+        for(int i=0; i<numInputs; i++){
+            SDVariable grad_in = f().gather(i_v.get(0), 0, new int[]{i});
+            grad_in = f().squeeze(grad_in, 0);
+            grads[0] = grads[0].mul(grad_in);
+        }
+        return Arrays.asList(grads);
+    }
+
 }
