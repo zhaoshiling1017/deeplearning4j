@@ -15,7 +15,9 @@ import org.tensorflow.framework.AttrValue;
 import org.tensorflow.framework.GraphDef;
 import org.tensorflow.framework.NodeDef;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -127,5 +129,41 @@ public class Gather extends DynamicCustomOp {
     @Override
     public String opName() {
         return "gather";
+    }
+
+    @Override
+    public List<SDVariable> doDiff(List<SDVariable> i_v) {
+        SDVariable grad_in = i_v.get(0);
+        SDVariable grads = arg().mul(0);
+        int dims[] = new int[grads.getShape().length];
+        if (axis != 0){
+            dims[0] = axis;
+            for(int i=1; i<=axis;i++){
+                dims[i] = i - 1;
+            }
+            for(int i=axis+1; i<dims.length; i++){
+                dims[i] = i;
+            }
+            grads = f().permute(grads, dims);
+
+        }
+        SDVariable[] grads_unstacked = new SDVariable[(int)grads.getShape()[0]];
+        for(int i=0; i<grads_unstacked.length;i++){
+            grads_unstacked[0] = f().squeeze(f().gather(grads, 0, new int[]{i}), 0);
+        }
+        for(int i=0; i< broadcast.length; i++){
+            SDVariable grad_in_slice = f().squeeze(f().gather(grad_in, 0, new int[]{i}), 0);
+            grads_unstacked[broadcast[i]].addi(grad_in_slice);
+        }
+        grads = f().stack(grads_unstacked, 0);
+        if (axis != 0) {
+            // reverse permute
+            int[] reverse_dims = new int[dims.length];
+            for(int i=0; i< reverse_dims.length; i++){
+                reverse_dims[dims[i]] = i;
+            }
+            grads = f().permute(grads, reverse_dims);
+        }
+        return Arrays.asList(grads);
     }
 }

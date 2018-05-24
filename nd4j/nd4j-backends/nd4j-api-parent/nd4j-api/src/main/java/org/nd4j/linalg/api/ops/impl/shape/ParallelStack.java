@@ -1,6 +1,5 @@
 package org.nd4j.linalg.api.ops.impl.shape;
 
-import com.sun.tools.javac.util.ArrayUtils;
 import lombok.val;
 import onnx.OnnxProto3;
 import org.nd4j.autodiff.samediff.SDVariable;
@@ -64,16 +63,5 @@ public class ParallelStack extends DynamicCustomOp {
         return ret;
     }
 
-    @Override
-    public List<SDVariable> doDiff(List<SDVariable> i_v) {
-        SDVariable[] grads = args();
-        int numInputs = grads.length;
-        for(int i=0; i<numInputs; i++){
-            SDVariable grad_in = f().gather(i_v.get(0), 0, new int[]{i});
-            grad_in = f().squeeze(grad_in, 0);
-            grads[0] = grads[0].mul(grad_in);
-        }
-        return Arrays.asList(grads);
-    }
 
 }
