@@ -48,7 +48,7 @@ public class SDVariable extends DifferentialFunction implements Serializable {
     protected WeightInitScheme weightInitScheme;
 
 
-
+    private DifferentialFunction creator;
 
     @Builder
     private SDVariable(String varName,

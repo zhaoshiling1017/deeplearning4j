@@ -1,0 +1,2 @@
+REM mvn clean install -DskipTests -D maven.javadoc.skip=true -pl "!org.nd4j:nd4j-cuda-8.0,!org.nd4j:nd4j-cuda-8.0-platform,!org.nd4j:nd4j-tests"
+mvn clean install -DskipTests -D maven.javadoc.skip=true -pl "!org.nd4j:nd4j-cuda-9.1,!org.nd4j:nd4j-cuda-9.1-platform,!org.nd4j:nd4j-tests"

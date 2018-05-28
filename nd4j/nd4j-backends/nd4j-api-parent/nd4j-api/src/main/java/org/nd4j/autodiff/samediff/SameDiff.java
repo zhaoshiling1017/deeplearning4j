@@ -4766,7 +4766,12 @@ public class SameDiff {
 
                         ret[i] = checkGet;
                     }
-                    return ret;
+
+                for(int i=0; i<ret.length; i++){
+                    ret[i].setCreator(function);
+                }
+
+                return ret;
             }
 
             //this is for unresolved shapes, we know xyz is always 1 output
@@ -4791,6 +4796,7 @@ public class SameDiff {
                 }
 
                 ret[0] = checkGet;
+                ret[0].setCreator(function);
                 return ret;
 
             }
@@ -4846,8 +4852,13 @@ public class SameDiff {
 
 
             ret[i] = checkGet;
+
         }
 
+
+        for(int i=0; i<ret.length; i++){
+            ret[i].setCreator(function);
+        }
 
         return ret;
     }
