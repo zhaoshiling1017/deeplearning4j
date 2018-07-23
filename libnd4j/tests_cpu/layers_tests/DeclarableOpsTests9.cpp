@@ -1171,109 +1171,75 @@ TEST_F(DeclarableOpsTests9, clipbynorm_test12) {
 }
 
 
-// ////////////////////////////////////////////////////////////////////////////////
-// TEST_F(DeclarableOpsTests9, clipbynorm_bp_test1) {
+////////////////////////////////////////////////////////////////////////////////
+TEST_F(DeclarableOpsTests9, clipbynorm_bp_test1) {
     
-//     const int bS   = 2;
-//     const int nOut = 3;
-//     const int axis = 0;
-//     const double clip = 0.7;
+    const int bS   = 2;
+    const int nOut = 3;
+    const int axis = 0;
+    const double clip = 0.7;
     
-//     NDArray<double> x('c', {bS, nOut}, {0.412 ,0.184 ,0.961 ,0.173 ,0.736 ,0.540 });    // uniform random in range [0,1]
-//     NDArray<double> gradO('c', {bS, nOut});
+    NDArray<double> x('c', {bS, nOut}, {0.412 ,0.184 ,0.961 ,0.173 ,0.736 ,0.540 });    // uniform random in range [0,1]
+    NDArray<double> gradO('c', {bS, nOut});
 
-//     const OpArgsHolder<double> argsHolderFF({&x}, {clip}, {});
-//     const OpArgsHolder<double> argsHolderBP({&x, &gradO}, {clip}, {});
+    const OpArgsHolder<double> argsHolderFF({&x}, {clip}, {});
+    const OpArgsHolder<double> argsHolderBP({&x, &gradO}, {clip}, {});
 
-//     nd4j::ops::clipbynorm<double> opFF;
-//     nd4j::ops::clipbynorm_bp<double> opBP;
-
-//     const bool isGradCorrect = GradCheck::checkGrad(opFF, opBP, argsHolderFF, argsHolderBP);
-
-//     ASSERT_TRUE(isGradCorrect);
-// }
-
-// ////////////////////////////////////////////////////////////////////////////////
-// TEST_F(DeclarableOpsTests9, clipbynorm_bp_test2) {
-    
-//     const int bS   = 2;
-//     const int nOut = 3;
-//     const int axis = 0;
-//     const double clip = 0.7;
-    
-//     NDArray<double> x('c', {bS, nOut}, {0.412 ,0.184 ,0.961 ,0.173 ,0.736 ,0.540 });    // uniform random in range [0,1]
-//     NDArray<double> gradO('c', {bS, nOut});
-
-//     const OpArgsHolder<double> argsHolderFF({&x}, {clip}, {axis});
-//     const OpArgsHolder<double> argsHolderBP({&x, &gradO}, {clip}, {axis});
-
-//     nd4j::ops::clipbynorm<double> opFF;
-//     nd4j::ops::clipbynorm_bp<double> opBP;
-
-//     const bool isGradCorrect = GradCheck::checkGrad(opFF, opBP, argsHolderFF, argsHolderBP);
-
-//     ASSERT_TRUE(isGradCorrect);
-// }
-
-
-// ////////////////////////////////////////////////////////////////////////////////
-// TEST_F(DeclarableOpsTests9, clipbynorm_bp_test3) {
-    
-//     const int bS   = 2;
-//     const int nOut = 3;
-//     const int axis = 1;
-//     const double clip = 1.;
-    
-//     NDArray<double> x('c', {bS, nOut}, {0.412 ,0.184 ,0.961 ,0.173 ,0.736 ,0.540 });    // uniform random in range [0,1]
-//     NDArray<double> gradO('c', {bS, nOut});
-
-//     const OpArgsHolder<double> argsHolderFF({&x}, {clip}, {axis});
-//     const OpArgsHolder<double> argsHolderBP({&x, &gradO}, {clip}, {axis});
-
-//     nd4j::ops::clipbynorm<double> opFF;
-//     nd4j::ops::clipbynorm_bp<double> opBP;
-
-//     const bool isGradCorrect = GradCheck::checkGrad(opFF, opBP, argsHolderFF, argsHolderBP);
-
-//     ASSERT_TRUE(isGradCorrect);
-// }
-
-////////////////////////////////////////////////////////////////////
-TEST_F(DeclarableOpsTests9, gru_cell_bp_test1) {
-
-    const int bS = 2;
-    const int iS = 3;
-    const int nU = 4;
-
-    NDArray<double> x     ('c', {bS, iS});
-    NDArray<double> h0    ('c', {bS, nU});
-    NDArray<double> Wx    ('c', {iS, 3*nU});
-    NDArray<double> Wh    ('c', {nU, 3*nU});
-    NDArray<double> b     ('c', {3*nU});
-    NDArray<double> dLdh  ('c', {bS, nU});
-    // NDArray<double> dLdWx0('c', {iS, 3*nU});
-    // NDArray<double> dLdWh0('c', {nU, 3*nU});
-    // NDArray<double> dLdb0 ('c', {3*nU});
-
-    x.linspace(0.5, 0.5);
-    h0 = 1.;
-    Wx = 0.003;
-    Wh = 0.006;
-    b  = 0.5;
-
-    const OpArgsHolder<double> argsHolderFF({&x, &h0, &Wx, &Wh, &b}, {}, {});
-    const OpArgsHolder<double> argsHolderBP({&x, &h0, &Wx, &Wh, &b, &dLdh}, {}, {});    
-
-    nd4j::ops::gru_cell<double> opFF;
-    nd4j::ops::gru_cell_bp<double> opBP;
+    nd4j::ops::clipbynorm<double> opFF;
+    nd4j::ops::clipbynorm_bp<double> opBP;
 
     const bool isGradCorrect = GradCheck::checkGrad(opFF, opBP, argsHolderFF, argsHolderBP);
 
     ASSERT_TRUE(isGradCorrect);
-
 }
 
-  // NDArray<T>* x      = INPUT_VARIABLE(0);                         // input [bS x iS]
+////////////////////////////////////////////////////////////////////////////////
+TEST_F(DeclarableOpsTests9, clipbynorm_bp_test2) {
+    
+    const int bS   = 2;
+    const int nOut = 3;
+    const int axis = 0;
+    const double clip = 0.7;
+    
+    NDArray<double> x('c', {bS, nOut}, {0.412 ,0.184 ,0.961 ,0.173 ,0.736 ,0.540 });    // uniform random in range [0,1]
+    NDArray<double> gradO('c', {bS, nOut});
+
+    const OpArgsHolder<double> argsHolderFF({&x}, {clip}, {axis});
+    const OpArgsHolder<double> argsHolderBP({&x, &gradO}, {clip}, {axis});
+
+    nd4j::ops::clipbynorm<double> opFF;
+    nd4j::ops::clipbynorm_bp<double> opBP;
+
+    const bool isGradCorrect = GradCheck::checkGrad(opFF, opBP, argsHolderFF, argsHolderBP);
+
+    ASSERT_TRUE(isGradCorrect);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+TEST_F(DeclarableOpsTests9, clipbynorm_bp_test3) {
+    
+    const int bS   = 2;
+    const int nOut = 3;
+    const int axis = 1;
+    const double clip = 1.;
+    
+    NDArray<double> x('c', {bS, nOut}, {0.412 ,0.184 ,0.961 ,0.173 ,0.736 ,0.540 });    // uniform random in range [0,1]
+    NDArray<double> gradO('c', {bS, nOut});
+
+    const OpArgsHolder<double> argsHolderFF({&x}, {clip}, {axis});
+    const OpArgsHolder<double> argsHolderBP({&x, &gradO}, {clip}, {axis});
+
+    nd4j::ops::clipbynorm<double> opFF;
+    nd4j::ops::clipbynorm_bp<double> opBP;
+
+    const bool isGradCorrect = GradCheck::checkGrad(opFF, opBP, argsHolderFF, argsHolderBP);
+
+    ASSERT_TRUE(isGradCorrect);
+}
+
+
+ // NDArray<T>* x      = INPUT_VARIABLE(0);                         // input [bS x iS]
   //   NDArray<T>* h0     = INPUT_VARIABLE(1);                         // previous cell output [bS x nU]     
   //   NDArray<T>* Wx     = INPUT_VARIABLE(2);                         // input-to-hidden  weights, [iS x 3*nU] 
   //   NDArray<T>* Wh     = INPUT_VARIABLE(3);                         // hidden-to-hidden weights, [nU x 3*nU] 
@@ -1288,3 +1254,4 @@ TEST_F(DeclarableOpsTests9, gru_cell_bp_test1) {
   //   NDArray<T>* dLdWx  = OUTPUT_VARIABLE(2);                        // gradient wrt Wx, [iS, 3*nU]
   //   NDArray<T>* dLdWh  = OUTPUT_VARIABLE(3);                        // gradient wrt Wh, [nU, 3*nU]
   //   NDArray<T>* dLdb   = OUTPUT_VARIABLE(4);                        // gradient wrt biases,  [3*nU]
+
