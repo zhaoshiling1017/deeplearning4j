@@ -107,23 +107,23 @@ DECLARE_SHAPE_FN(gru_cell) {
 
 
 //////////////////////////////////////////////////////////////////////////
-CUSTOM_OP_IMPL(gru_cell_bp, 9, 5, false, 0, 0) {
+CUSTOM_OP_IMPL(gru_cell_bp, 6, 5, false, 0, 0) {
 
-    NDArray<T>* x      = INPUT_VARIABLE(0);                         // input [bS x iS]
-    NDArray<T>* h0     = INPUT_VARIABLE(1);                         // previous cell output [bS x nU]     
-    NDArray<T>* Wx     = INPUT_VARIABLE(2);                         // input-to-hidden  weights, [iS x 3*nU] 
-    NDArray<T>* Wh     = INPUT_VARIABLE(3);                         // hidden-to-hidden weights, [nU x 3*nU] 
-    NDArray<T>* b      = INPUT_VARIABLE(4);                         // biases, [3*nU] 
-    NDArray<T>* dLdh   = INPUT_VARIABLE(5);                         // gradient wrt output, [bS,nU], that is epsilon_next
-    NDArray<T>* dLdWx0 = INPUT_VARIABLE(6);                         // gradient wrt Wx at previous time step, [iS, 3*nU]
-    NDArray<T>* dLdWh0 = INPUT_VARIABLE(7);                         // gradient wrt Wh at previous time step, [nU, 3*nU]
-    NDArray<T>* dLdb0  = INPUT_VARIABLE(8);                         // gradient wrt b at previous time step,  [3*nU]
+    NDArray<T>* x      = INPUT_VARIABLE(0);                                 // input [bS x iS]
+    NDArray<T>* h0     = INPUT_VARIABLE(1);                                 // previous cell output [bS x nU]     
+    NDArray<T>* Wx     = INPUT_VARIABLE(2);                                 // input-to-hidden  weights, [iS x 3*nU] 
+    NDArray<T>* Wh     = INPUT_VARIABLE(3);                                 // hidden-to-hidden weights, [nU x 3*nU] 
+    NDArray<T>* b      = INPUT_VARIABLE(4);                                 // biases, [3*nU] 
+    NDArray<T>* dLdh   = INPUT_VARIABLE(5);                                 // gradient wrt output, [bS,nU], that is epsilon_next
+    NDArray<T> *dLdWx0 = block.width() > 6 ? INPUT_VARIABLE(6) : nullptr;   // gradient wrt Wx at previous time step, [iS, 3*nU]
+    NDArray<T> *dLdWh0 = block.width() > 7 ? INPUT_VARIABLE(7) : nullptr;   // gradient wrt Wh at previous time step, [nU, 3*nU]
+    NDArray<T> *dLdb0  = block.width() > 8 ? INPUT_VARIABLE(8) : nullptr;   // gradient wrt b at previous time step,  [3*nU]
     
-    NDArray<T>* dLdx   = OUTPUT_VARIABLE(0);                        // gradient wrt x,  [bS, iS], that is epsilon
-    NDArray<T>* dLdh0  = OUTPUT_VARIABLE(1);                        // gradient wrt h0, [bS, nU]
-    NDArray<T>* dLdWx  = OUTPUT_VARIABLE(2);                        // gradient wrt Wx, [iS, 3*nU]
-    NDArray<T>* dLdWh  = OUTPUT_VARIABLE(3);                        // gradient wrt Wh, [nU, 3*nU]
-    NDArray<T>* dLdb   = OUTPUT_VARIABLE(4);                        // gradient wrt biases,  [3*nU]
+    NDArray<T>* dLdx   = OUTPUT_VARIABLE(0);                                // gradient wrt x,  [bS, iS], that is epsilon
+    NDArray<T>* dLdh0  = OUTPUT_VARIABLE(1);                                // gradient wrt h0, [bS, nU]
+    NDArray<T>* dLdWx  = OUTPUT_VARIABLE(2);                                // gradient wrt Wx, [iS, 3*nU]
+    NDArray<T>* dLdWh  = OUTPUT_VARIABLE(3);                                // gradient wrt Wh, [nU, 3*nU]
+    NDArray<T>* dLdb   = OUTPUT_VARIABLE(4);                                // gradient wrt biases,  [3*nU]
 
     const int rank     = x->rankOf();                               // = 2
     const Nd4jLong bS  = x->sizeAt(0);
@@ -182,10 +182,7 @@ DECLARE_SHAPE_FN(gru_cell_bp) {
     Nd4jLong* whShapeInfo     = inputShape->at(3);                                              // [nU x 3*nU]
     Nd4jLong* bShapeInfo      = inputShape->at(4);                                              // [3*nU]
     Nd4jLong* dLdhShapeInfo   = inputShape->at(5);                                              // [bS x nU]
-    Nd4jLong* dLdWx0ShapeInfo = inputShape->at(6);                                              // [iS x 3*nU]
-    Nd4jLong* dLdWh0ShapeInfo = inputShape->at(7);                                              // [nU x 3*nU]
-    Nd4jLong* dLdb0ShapeInfo  = inputShape->at(8);                                              // [3*nU]
-
+    
     const int rank    = xShapeInfo[0];                               // = 2
     const Nd4jLong bS = xShapeInfo[1];
     const Nd4jLong iS = xShapeInfo[2];
@@ -208,19 +205,22 @@ DECLARE_SHAPE_FN(gru_cell_bp) {
     REQUIRE_TRUE(bShape    == bCorrectShape,     0, "GRU_CELL_BP op: wrong shape of biases array, expected is %s, but got %s instead !", bCorrectShape.c_str(), bShape.c_str());     
     REQUIRE_TRUE(dLdhShape == dLdhCorrectShape,  0, "GRU_CELL_BP op: wrong shape of dLdh array (epsilon_next), expected is %s, but got %s instead !", dLdhCorrectShape.c_str(), dLdhShape.c_str());     
 
-    if(INPUT_VARIABLE(6) != nullptr) {
+    if(block.width() > 6) {
+        Nd4jLong* dLdWx0ShapeInfo = inputShape->at(6);                                              // [iS x 3*nU]
         const std::string dLdWx0Shape        = ShapeUtils<T>::shapeAsString(dLdWx0ShapeInfo);
-        const std::string dLdWx0CorrectShape = ShapeUtils<T>::shapeAsString({iS, 3*nU});
+        const std::string dLdWx0CorrectShape = ShapeUtils<T>::shapeAsString({iS, 3*nU});    
         REQUIRE_TRUE(dLdWx0Shape == dLdWx0CorrectShape,  0, "GRU_CELL_BP op: wrong shape of dLdWx0 array (gradient wrt Wx at previous time step), expected is %s, but got %s instead !", dLdWx0CorrectShape.c_str(), dLdWx0Shape.c_str());
     }
 
-    if(INPUT_VARIABLE(7) != nullptr) {
+    if(block.width() > 7) {
+        Nd4jLong* dLdWh0ShapeInfo = inputShape->at(7);                                              // [nU x 3*nU]
         const std::string dLdWh0Shape        = ShapeUtils<T>::shapeAsString(dLdWh0ShapeInfo);
         const std::string dLdWh0CorrectShape = ShapeUtils<T>::shapeAsString({nU, 3*nU});
         REQUIRE_TRUE(dLdWh0Shape == dLdWh0CorrectShape,  0, "GRU_CELL_BP op: wrong shape of dLdWh0 array (gradient wrt Wh at previous time step), expected is %s, but got %s instead !", dLdWh0CorrectShape.c_str(), dLdWh0Shape.c_str());
     }
 
-    if(INPUT_VARIABLE(8) != nullptr) {
+    if(block.width() > 8) {
+        Nd4jLong* dLdb0ShapeInfo  = inputShape->at(8);                                              // [3*nU]
         const std::string dLdb0Shape        = ShapeUtils<T>::shapeAsString(dLdb0ShapeInfo);
         const std::string dLdb0CorrectShape = ShapeUtils<T>::shapeAsString({3*nU});
         REQUIRE_TRUE(dLdb0Shape == dLdb0CorrectShape,  0, "GRU_CELL_BP op: wrong shape of dLdb0 array (gradient wrt biases at previous time step), expected is %s, but got %s instead !", dLdb0CorrectShape.c_str(), dLdb0Shape.c_str());

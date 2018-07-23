@@ -274,7 +274,7 @@ namespace nd4j {
        *    4: gradient wrt biases, [3*numUnits] 
        */                  
         #if NOT_EXCLUDED(OP_gru_cell_bp)
-        DECLARE_CUSTOM_OP(gru_cell_bp, 9, 5, false, 0, 0);
+        DECLARE_CUSTOM_OP(gru_cell_bp, 6, 5, false, 0, 0);
         #endif
 
     //////////////////////////////////////////////////////////////////////////

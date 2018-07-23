@@ -17,14 +17,16 @@ void GradCheck::fillGradArrays(const LossFunc loss, const std::vector<NDArray<do
 
 		case MEAN: 
 #pragma omp parallel for if(numInGradArrs > 1) schedule(guided)
-			for(int i = 0; i < numInGradArrs; ++i) 				
-				*gradArrs[i] = 1. / gradArrs[i]->lengthOf();			
+			for(int i = 0; i < numInGradArrs; ++i) 
+				if(gradArrs[i] != nullptr)
+					*gradArrs[i] = 1. / gradArrs[i]->lengthOf();						
 			break;
 
 		case SUM: 
 #pragma omp parallel for if(numInGradArrs > 1) schedule(guided)		
 			for(int i = 0; i < numInGradArrs; ++i) 
-				*gradArrs[i] = 1.;
+				if(gradArrs[i] != nullptr)
+					*gradArrs[i] = 1.;			
 			break;
 			 
 		default:				
