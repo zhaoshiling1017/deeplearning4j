@@ -1016,7 +1016,7 @@ TEST_F(DeclarableOpsTests3, gruCell_test1) {
 
     NDArray<double> expHt('c', {batchSize, numUnits}, {1.99993872,1.99993872,1.99993872,1.99993872,1.99993872,1.99993872,1.99993872,1.99993872});
 
-    nd4j::ops::gruCell<double> op;
+    nd4j::ops::gru_cell<double> op;
     nd4j::ResultSet<double>* results = op.execute({&xt, &ht_1, &Wx, &Wh, &b}, {}, {});
 
     ASSERT_EQ(ND4J_STATUS_OK, results->status());
@@ -1050,7 +1050,7 @@ TEST_F(DeclarableOpsTests3, gruCell_test2) {
 
     NDArray<double> expHt('c', {batchSize, numUnits}, {0.00669224,0.00669224,0.00669224,0.00669224,0.00669224,0.00669224,0.00669224,0.00669224});
 
-    nd4j::ops::gruCell<double> op;
+    nd4j::ops::gru_cell<double> op;
     nd4j::ResultSet<double>* results = op.execute({&xt, &ht_1, &Wx, &Wh, &b}, {}, {});
 
     ASSERT_EQ(ND4J_STATUS_OK, results->status());
@@ -1084,7 +1084,7 @@ TEST_F(DeclarableOpsTests3, gruCell_test3) {
 
     NDArray<double> expHt('c', {batchSize, numUnits}, {0.1149149,0.1149149,0.1149149,0.1149149,0.1149149,0.1149149,0.1149149,0.1149149});
 
-    nd4j::ops::gruCell<double> op;
+    nd4j::ops::gru_cell<double> op;
     nd4j::ResultSet<double>* results = op.execute({&xt, &ht_1, &Wx, &Wh, &b}, {}, {});
 
     ASSERT_EQ(ND4J_STATUS_OK, results->status());

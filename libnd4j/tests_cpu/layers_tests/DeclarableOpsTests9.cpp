@@ -1238,5 +1238,58 @@ TEST_F(DeclarableOpsTests9, clipbynorm_bp_test3) {
     ASSERT_TRUE(isGradCorrect);
 }
 
+// ////////////////////////////////////////////////////////////////////
+// TEST_F(DeclarableOpsTests9, gru_cell_bp_test1) {
+
+//     const int bS = 2;
+//     const int iS = 3;
+//     const int nU = 4;
+
+//     NDArray<double> x     ('c', {bS, iS});
+//     NDArray<double> h0    ('c', {bS, nU});
+//     NDArray<double> Wx    ('c', {iS, 3*nU});
+//     NDArray<double> Wh    ('c', {nU, 3*nU});
+//     NDArray<double> b     ('c', {3*nU});
+//     NDArray<double> dLdh  ('c', {bS, nU});
+//     NDArray<double> dLdWx0('c', {iS, 3*nU});
+//     NDArray<double> dLdWh0('c', {nU, 3*nU});
+//     NDArray<double> dLdb0 ('c', {3*nU});
+
+//     xt.linspace(1.);
+//     h0.assign(0.5, 0.5);
+//     Wx.assign(0.05, 0.05);
+//     Wh.assign(0.06, 0.06);
+//     b.assign(0.01, 0.01);
+
+//     const OpArgsHolder<double> argsHolderBP({&x, &h0, &Wx, &Wh, &b, &dLdh, nullptr, nullptr, nullptr, nullptr}, {}, {});
+//     const OpArgsHolder<double> argsHolderFF({&x, &gradO}, {clip}, {axis});
 
 
+//     nd4j::ops::gru_cell_bp<double> op;
+//     nd4j::ResultSet<double>* results = op.execute({&x, &h0, &Wx, &Wh, &b}, {}, {});
+
+//     ASSERT_EQ(ND4J_STATUS_OK, results->status());
+
+//     NDArray<double> *ht = results->at(0);
+
+//     ASSERT_TRUE(expHt.isSameShape(ht));
+//     ASSERT_TRUE(expHt.equalsTo(ht));
+
+//     delete results;
+// }
+
+//   NDArray<T>* x      = INPUT_VARIABLE(0);                         // input [bS x iS]
+//     NDArray<T>* h0     = INPUT_VARIABLE(1);                         // previous cell output [bS x nU]     
+//     NDArray<T>* Wx     = INPUT_VARIABLE(2);                         // input-to-hidden  weights, [iS x 3*nU] 
+//     NDArray<T>* Wh     = INPUT_VARIABLE(3);                         // hidden-to-hidden weights, [nU x 3*nU] 
+//     NDArray<T>* b      = INPUT_VARIABLE(4);                         // biases, [3*nU] 
+//     NDArray<T>* dLdh   = INPUT_VARIABLE(5);                         // gradient wrt output, [bS,nU], that is epsilon_next
+//     NDArray<T>* dLdWx0 = INPUT_VARIABLE(6);                         // gradient wrt Wx at previous time step, [iS, 3*nU]
+//     NDArray<T>* dLdWh0 = INPUT_VARIABLE(7);                         // gradient wrt Wh at previous time step, [nU, 3*nU]
+//     NDArray<T>* dLdb0  = INPUT_VARIABLE(8);                         // gradient wrt b at previous time step,  [3*nU]
+    
+//     NDArray<T>* dLdx   = OUTPUT_VARIABLE(0);                        // gradient wrt x,  [bS, iS], that is epsilon
+//     NDArray<T>* dLdh0  = OUTPUT_VARIABLE(1);                        // gradient wrt h0, [bS, nU]
+//     NDArray<T>* dLdWx  = OUTPUT_VARIABLE(2);                        // gradient wrt Wx, [iS, 3*nU]
+//     NDArray<T>* dLdWh  = OUTPUT_VARIABLE(3);                        // gradient wrt Wh, [nU, 3*nU]
+//     NDArray<T>* dLdb   = OUTPUT_VARIABLE(4);                        // gradient wrt biases,  [3*nU]

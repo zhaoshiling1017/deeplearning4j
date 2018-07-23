@@ -124,7 +124,7 @@ void gruCellBP(const std::vector<NDArray<T>*>& inArrs, const std::vector<NDArray
     NDArray<T>* dLdh0  = outArrs[1];                  // gradient wrt h0, [bS, nU]
     NDArray<T>* dLdWx  = outArrs[2];                  // gradient wrt Wx, [iS, 3*nU]
     NDArray<T>* dLdWh  = outArrs[3];                  // gradient wrt Wh, [nU, 3*nU]
-    NDArray<T>* dLdb   = outArrs[4];                  // gradient wrt b at previous time step,  [3*nU]
+    NDArray<T>* dLdb   = outArrs[4];                  // gradient wrt b,  [3*nU]
     
     // h is current cell output [bS, nU], that is at current time step t    
 
