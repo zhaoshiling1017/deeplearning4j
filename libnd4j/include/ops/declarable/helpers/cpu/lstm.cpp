@@ -133,8 +133,8 @@ template <typename T>
 void lstmTimeLoop(const std::vector<NDArray<T>*>& inArrs, const std::vector<NDArray<T>*>& outArrs, const std::vector<T>& params) {
     
     NDArray<T>* x  = inArrs[0];                    // input [time x bS x inSize]
-    NDArray<T>* h0 = inArrs[1];                    // initial cell output (at time step = 0) [bS x numProj], in case of projection=false -> numProj == numUnits !!!
-    NDArray<T>* c0 = inArrs[2];                    // initial cell state  (at time step = 0) [bS x numUnits],  
+    NDArray<T>* hi = inArrs[1];                    // initial cell output (at time step = 0) [bS x numProj], in case of projection=false -> numProj == numUnits !!!
+    NDArray<T>* ci = inArrs[2];                    // initial cell state  (at time step = 0) [bS x numUnits],  
 
     NDArray<T>* Wx  = inArrs[3];                   // input-to-hidden  weights, [inSize  x 4*numUnits] 
     NDArray<T>* Wh  = inArrs[4];                   // hidden-to-hidden weights, [numProj x 4*numUnits] 
@@ -147,21 +147,40 @@ void lstmTimeLoop(const std::vector<NDArray<T>*>& inArrs, const std::vector<NDAr
 
     const int time  = x->sizeAt(0);
 
-    NDArray<T> currentH(*h0);
-    NDArray<T> currentC(*c0);
+    // first time step
+    NDArray<T> x0 = (*x)({{0,1}, {}, {}});
+    NDArray<T> h0 = (*h)({{0,1}, {}, {}});
+    NDArray<T> c0 = (*c)({{0,1}, {}, {}});
+    helpers::lstmCell<T>({&x0,hi,ci, Wx,Wh,Wc,Wp, b},   {&h0, &c0},   params);
 
-    // loop through time steps
-    for (int t = 0; t < time; ++t) {
+    // rest time steps
+    for (int t = 1; t < time; ++t) {
         
-        NDArray<T> xt = (*x)({{t,t+1}, {}, {}});
-        NDArray<T> ht = (*h)({{t,t+1}, {}, {}});
-        NDArray<T> ct = (*c)({{t,t+1}, {}, {}});
+        NDArray<T> xt   = (*x)({{t,t+1}, {}, {}});
+        NDArray<T> ht   = (*h)({{t,t+1}, {}, {}});
+        NDArray<T> ct   = (*c)({{t,t+1}, {}, {}});
+        NDArray<T> ht_1 = (*h)({{t-1,t}, {}, {}});
+        NDArray<T> ct_1 = (*c)({{t-1,t}, {}, {}});
 
-        helpers::lstmCell<T>({&xt,&currentH,&currentC, Wx,Wh,Wc,Wp, b},   {&ht, &ct},   params);
-        currentH.assign(ht);
-        currentC.assign(ct);
+        helpers::lstmCell<T>({&xt,&ht_1,&ct_1, Wx,Wh,Wc,Wp, b},   {&ht, &ct},   params);
     }    
 }
+
+
+    // first time step
+    // NDArray<T> x0 = (*x)({{0,1}, {}, {}});
+    // NDArray<T> hO = (*h)({{0,1}, {}, {}});
+    // helpers::gruCell<T>({&x0, h0, Wx, Wh, b}, &hO);
+
+    // // rest time steps
+    // for (int t = 1; t < time; ++t) {
+
+    //     NDArray<T> xt   = (*x)({{t,  t+1}, {}, {}});
+    //     NDArray<T> ht   = (*h)({{t,  t+1}, {}, {}});
+    //     NDArray<T> ht_1 = (*h)({{t-1,t},   {}, {}});
+
+    //     helpers::gruCell<T>({&xt, &ht_1, Wx, Wh, b}, &ht);        
+    // }
 
 
 template void clipping<float>(NDArray<float>* arr, float limit);

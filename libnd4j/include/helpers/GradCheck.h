@@ -42,24 +42,6 @@ class GradCheck {
 
 
 
-
-
-// //////////////////////////////////////////////////////////////////////////
-// ///// IMLEMENTATION OF INLINE METHODS ///// 
-// //////////////////////////////////////////////////////////////////////////
-
-// template<typename T>
-// FORCEINLINE bool ShapeUtils<T>::isPermutNecessary(const std::vector<int>& permut) {        
-
-//     for(int i=0; i<permut.size(); ++i)
-//         if(permut[i] != i)
-//             return true;
-
-//     return false;
-// }
-
-
-
 }
 
 #endif //LIBND4J_GRADCHECK_H
