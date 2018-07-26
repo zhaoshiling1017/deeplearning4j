@@ -256,15 +256,15 @@ namespace nd4j {
        * Implementation of back propagation in gated Recurrent Unit Cell:
        *
        * Input arrays: 
-       *    0: input with shape [batchSize x inSize], time - number of time steps, batchSize - batch size, inSize - number of features
+       *    0: input with shape [batchSize x inSize], batchSize - batch size, inSize - number of features
        *    1: previous cell output [batchSize x numUnits], that is at previous time step
        *    2: input-to-hidden  weights, [inSize   x 3*numUnits] 
        *    3: hidden-to-hidden weights, [numUnits x 3*numUnits] 
        *    4: biases, [3*numUnits]
        *    5: gradient wrt output, [batchSize, numUnits], that is epsilon_next
-       *    6: gradient wrt input-to-hidden weights at previous time step, [inSize, 3*numUnits]
-       *    7: gradient wrt hidden-to-hidden weights at previous time step, [numUnits, 3*numUnits]
-       *    8: gradient wrt biases at previous time step,  [3*numUnits]
+       *    6: optional - gradient wrt input-to-hidden weights at previous time step, [inSize, 3*numUnits]
+       *    7: optional - gradient wrt hidden-to-hidden weights at previous time step, [numUnits, 3*numUnits]
+       *    8: optional - gradient wrt biases at previous time step,  [3*numUnits]
        *  
        * Output arrays: 
        *    0: gradient wrt input, [batchSize, inSize], that is epsilon
@@ -273,7 +273,7 @@ namespace nd4j {
        *    3: gradient wrt hidden-to-hidden weights, [numUnits x 3*numUnits] 
        *    4: gradient wrt biases, [3*numUnits] 
        */                  
-        #if NOT_EXCLUDED(OP_gru_cell_bp)
+        #if NOT_EXCLUDED(OP_gru_cell)
         DECLARE_CUSTOM_OP(gru_cell_bp, 6, 5, false, 0, 0);
         #endif
 
@@ -310,7 +310,7 @@ namespace nd4j {
 
     //////////////////////////////////////////////////////////////////////////
     /**
-       * Implementation of gated Recurrent Unit:
+       * Implementation of gated Recurrent Unit time sequences:
        *
        * Input arrays: 
        *    0: input with shape [time x batchSize x inSize], time - number of time steps, batchSize - batch size, inSize - number of features
@@ -325,6 +325,30 @@ namespace nd4j {
         #if NOT_EXCLUDED(OP_gru)
         DECLARE_CUSTOM_OP(gru, 5, 1, false, 0, 0);
         #endif
+    
+    //////////////////////////////////////////////////////////////////////////
+    /**
+       * Implementation of back propagation in gated Recurrent Unit time sequences:
+       *
+       * Input arrays: 
+       *    0: input with shape [time, batchSize x inSize], time - number of time steps, batchSize - batch size, inSize - number of features
+       *    1: previous cell output [batchSize x numUnits], that is at previous time step
+       *    2: input-to-hidden  weights, [inSize   x 3*numUnits] 
+       *    3: hidden-to-hidden weights, [numUnits x 3*numUnits] 
+       *    4: biases, [3*numUnits]
+       *    5: gradient wrt output, [time, batchSize, numUnits], that is epsilon_next
+       *  
+       * Output arrays: 
+       *    0: gradient wrt input, [time, batchSize, inSize], that is epsilon
+       *    1: gradient wrt previous cell output, [batchSize x numUnits]
+       *    2: gradient wrt input-to-hidden  weights, [inSize   x 3*numUnits] 
+       *    3: gradient wrt hidden-to-hidden weights, [numUnits x 3*numUnits] 
+       *    4: gradient wrt biases, [3*numUnits] 
+       */                  
+        #if NOT_EXCLUDED(OP_gru)
+        DECLARE_CUSTOM_OP(gru_bp, 6, 5, false, 0, 0);
+        #endif
+
 
     //////////////////////////////////////////////////////////////////////////
     /**

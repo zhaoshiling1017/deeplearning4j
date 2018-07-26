@@ -112,6 +112,105 @@ DECLARE_SHAPE_FN(gru) {
 }   
 
 
+//////////////////////////////////////////////////////////////////////////
+CUSTOM_OP_IMPL(gru_bp, 6, 5, false, 0, 0) {
+    
+    NDArray<T>* x      = INPUT_VARIABLE(0);                                 // input [time x bS x iS]
+    NDArray<T>* hi     = INPUT_VARIABLE(1);                                 // previous cell output [bS x nU]     
+    NDArray<T>* Wx     = INPUT_VARIABLE(2);                                 // input-to-hidden  weights, [iS x 3*nU] 
+    NDArray<T>* Wh     = INPUT_VARIABLE(3);                                 // hidden-to-hidden weights, [nU x 3*nU] 
+    NDArray<T>* b      = INPUT_VARIABLE(4);                                 // biases, [3*nU] 
+    NDArray<T>* dLdh   = INPUT_VARIABLE(5);                                 // gradient wrt output, [time, bS, nU], that is epsilon_next
+    
+    NDArray<T>* dLdx   = OUTPUT_VARIABLE(0);                                // gradient wrt x,  [time,bS, iS], that is epsilon
+    NDArray<T>* dLdhi  = OUTPUT_VARIABLE(1);                                // gradient wrt hi, [bS, nU]
+    NDArray<T>* dLdWx  = OUTPUT_VARIABLE(2);                                // gradient wrt Wx, [iS, 3*nU]
+    NDArray<T>* dLdWh  = OUTPUT_VARIABLE(3);                                // gradient wrt Wh, [nU, 3*nU]
+    NDArray<T>* dLdb   = OUTPUT_VARIABLE(4);                                // gradient wrt biases,  [3*nU]
+
+    const int rank      = x->rankOf();                               // = 2
+    const Nd4jLong time = x->sizeAt(0);
+    const Nd4jLong bS   = x->sizeAt(1);
+    const Nd4jLong iS   = x->sizeAt(2);
+    const Nd4jLong nU   = hi->sizeAt(1);    
+
+    const std::string hiShape          = ShapeUtils<T>::shapeAsString(hi); 
+    const std::string hiCorrectShape   = ShapeUtils<T>::shapeAsString({bS, nU});
+    const std::string wxShape          = ShapeUtils<T>::shapeAsString(Wx); 
+    const std::string wxCorrectShape   = ShapeUtils<T>::shapeAsString({iS, 3*nU}); 
+    const std::string whShape          = ShapeUtils<T>::shapeAsString(Wh); 
+    const std::string whCorrectShape   = ShapeUtils<T>::shapeAsString({nU, 3*nU}); 
+    const std::string bShape           = ShapeUtils<T>::shapeAsString(b); 
+    const std::string bCorrectShape    = ShapeUtils<T>::shapeAsString({3*nU});    
+    const std::string dLdhShape        = ShapeUtils<T>::shapeAsString(dLdh);
+    const std::string dLdhCorrectShape = ShapeUtils<T>::shapeAsString({time, bS, nU});
+    
+    REQUIRE_TRUE(hiShape   == hiCorrectShape,   0, "GRU_BP op: wrong shape of previous cell output array, expected is %s, but got %s instead !", hiCorrectShape.c_str(), hiShape.c_str()); 
+    REQUIRE_TRUE(wxShape   == wxCorrectShape,   0, "GRU_BP op: wrong shape of input-to-hidden weights array, expected is %s, but got %s instead !", wxCorrectShape.c_str(), wxShape.c_str()); 
+    REQUIRE_TRUE(whShape   == whCorrectShape,   0, "GRU_BP op: wrong shape of hidden-to-hidden weights array, expected is %s, but got %s instead !", whCorrectShape.c_str(), whShape.c_str());     
+    REQUIRE_TRUE(bShape    == bCorrectShape,    0, "GRU_BP op: wrong shape of biases array, expected is %s, but got %s instead !", bCorrectShape.c_str(), bShape.c_str());     
+    REQUIRE_TRUE(dLdhShape == dLdhCorrectShape, 0, "GRU_BP op: wrong shape of dLdh array (epsilon_next), expected is %s, but got %s instead !", dLdhCorrectShape.c_str(), dLdhShape.c_str());     
+   
+    const std::vector<NDArray<T>*> inArrs  = {x, hi, Wx, Wh, b, dLdh};
+    const std::vector<NDArray<T>*> outArrs = {dLdx, dLdhi, dLdWx, dLdWh, dLdb};
+
+    helpers::gruTimeLoopBP<T>(inArrs, outArrs);
+    
+    return Status::OK();
+}
+
+
+DECLARE_SHAPE_FN(gru_bp) {
+
+    Nd4jLong* xShapeInfo      = inputShape->at(0);                                              // [time x bS x iS]
+    Nd4jLong* hiShapeInfo     = inputShape->at(1);                                              // [bS x nU]
+    Nd4jLong* wxShapeInfo     = inputShape->at(2);                                              // [iS x 3*nU]
+    Nd4jLong* whShapeInfo     = inputShape->at(3);                                              // [nU x 3*nU]
+    Nd4jLong* bShapeInfo      = inputShape->at(4);                                              // [3*nU]
+    Nd4jLong* dLdhShapeInfo   = inputShape->at(5);                                              // [time x bS x nU]
+    
+    const int rank      = xShapeInfo[0];                               // = 2
+    const Nd4jLong time = xShapeInfo[1];
+    const Nd4jLong bS   = xShapeInfo[2];
+    const Nd4jLong iS   = xShapeInfo[3];
+    const Nd4jLong nU   = hiShapeInfo[2];    
+
+    const std::string hiShape          = ShapeUtils<T>::shapeAsString(hiShapeInfo); 
+    const std::string hiCorrectShape   = ShapeUtils<T>::shapeAsString({bS, nU});
+    const std::string wxShape          = ShapeUtils<T>::shapeAsString(wxShapeInfo); 
+    const std::string wxCorrectShape   = ShapeUtils<T>::shapeAsString({iS, 3*nU}); 
+    const std::string whShape          = ShapeUtils<T>::shapeAsString(whShapeInfo); 
+    const std::string whCorrectShape   = ShapeUtils<T>::shapeAsString({nU, 3*nU}); 
+    const std::string bShape           = ShapeUtils<T>::shapeAsString(bShapeInfo); 
+    const std::string bCorrectShape    = ShapeUtils<T>::shapeAsString({3*nU});    
+    const std::string dLdhShape        = ShapeUtils<T>::shapeAsString(dLdhShapeInfo);
+    const std::string dLdhCorrectShape = ShapeUtils<T>::shapeAsString({time, bS, nU});
+    
+    REQUIRE_TRUE(hiShape   == hiCorrectShape,    0, "GRU_BP op: wrong shape of previous cell output array, expected is %s, but got %s instead !", hiCorrectShape.c_str(), hiShape.c_str());
+    REQUIRE_TRUE(wxShape   == wxCorrectShape,    0, "GRU_BP op: wrong shape of input-to-hidden weights array, expected is %s, but got %s instead !", wxCorrectShape.c_str(), wxShape.c_str());
+    REQUIRE_TRUE(whShape   == whCorrectShape,    0, "GRU_BP op: wrong shape of hidden-to-hidden weights array, expected is %s, but got %s instead !", whCorrectShape.c_str(), whShape.c_str());
+    REQUIRE_TRUE(bShape    == bCorrectShape,     0, "GRU_BP op: wrong shape of biases array, expected is %s, but got %s instead !", bCorrectShape.c_str(), bShape.c_str());     
+    REQUIRE_TRUE(dLdhShape == dLdhCorrectShape,  0, "GRU_BP op: wrong shape of dLdh array (epsilon_next), expected is %s, but got %s instead !", dLdhCorrectShape.c_str(), dLdhShape.c_str());
+    
+    Nd4jLong *dLdxShapeInfo = nullptr;
+    COPY_SHAPE(xShapeInfo, dLdxShapeInfo);
+    
+    Nd4jLong *dLdhiShapeInfo = nullptr;
+    COPY_SHAPE(hiShapeInfo, dLdhiShapeInfo);
+
+    Nd4jLong *dLdWxShapeInfo = nullptr;
+    COPY_SHAPE(wxShapeInfo, dLdWxShapeInfo);
+
+    Nd4jLong *dLdWhShapeInfo = nullptr;
+    COPY_SHAPE(whShapeInfo, dLdWhShapeInfo);
+
+    Nd4jLong *dLdbShapeInfo = nullptr;
+    COPY_SHAPE(bShapeInfo, dLdbShapeInfo);
+
+    return SHAPELIST(dLdxShapeInfo, dLdhiShapeInfo, dLdWxShapeInfo, dLdWhShapeInfo, dLdbShapeInfo);
+    
+}
+
 
 
 }

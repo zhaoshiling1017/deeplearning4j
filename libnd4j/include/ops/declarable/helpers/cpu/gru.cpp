@@ -111,7 +111,7 @@ void gruTimeLoop(const std::vector<NDArray<T>*>& inArrs, NDArray<T>* h) {
 
 //////////////////////////////////////////////////////////////////////////
 template <typename T>
-void gruCellBP(const std::vector<NDArray<T>*>& inArrs, const std::vector<NDArray<T>*>& outArrs, const bool firstTimeStep) {
+void gruCellBP(const std::vector<NDArray<T>*>& inArrs, const std::vector<NDArray<T>*>& outArrs) {
 
     NDArray<T>* x      = inArrs[0];                   // input [bS, iS]
     NDArray<T>* hi     = inArrs[1];                   // previous/initial cell output [bS, nU],  that is at previous time step t-1
@@ -119,6 +119,9 @@ void gruCellBP(const std::vector<NDArray<T>*>& inArrs, const std::vector<NDArray
     NDArray<T>* Wh     = inArrs[3];                   // hidden-to-hidden weights, [nU, 3*nU]     
     NDArray<T>* b      = inArrs[4];                   // biases, [3*nU]     
     NDArray<T>* dLdh   = inArrs[5];                   // gradient wrt output, [bS,nU], that is epsilon_next  
+    NDArray<T>* dLdWx0 = inArrs[6];                   // gradient wrt Wx at previous time step, [iS, 3*nU]
+    NDArray<T>* dLdWh0 = inArrs[7];                   // gradient wrt Wh at previous time step, [nU, 3*nU]
+    NDArray<T>* dLdb0  = inArrs[8];                   // gradient wrt b at previous time step,  [3*nU]  
 
     NDArray<T>* dLdx   = outArrs[0];                  // gradient wrt x,  [bS, iS], that is epsilon    
     NDArray<T>* dLdhi  = outArrs[1];                  // gradient wrt hi, [bS, nU]
@@ -191,7 +194,7 @@ void gruCellBP(const std::vector<NDArray<T>*>& inArrs, const std::vector<NDArray
     dLdbu.assign( (dLdu_dSig).template reduceAlongDims<simdOps::Sum<T>>({0}));                          // [nU]
     dLdbn.assign( (dLdn_dAct).template reduceAlongDims<simdOps::Sum<T>>({0}));                          // [nU]
 
-    if(firstTimeStep) {
+    if(dLdWx0 == nullptr) {      // first time step
 
         NDArray<T> Whu  = (*Wh)({{}, {nU,  2*nU}});
         NDArray<T> Whr  = (*Wh)({{}, {0,   nU}});  
@@ -203,15 +206,11 @@ void gruCellBP(const std::vector<NDArray<T>*>& inArrs, const std::vector<NDArray
         
         dLdhi->assign( mmul(dLdu_dSig, WhuT) + mmul(dLdn_dAct * (r + drdhi), WhnT) + (*dLdh)*u );        // [bS,nU]
     }
-    else {
-        
-        NDArray<T>* dLdWxi = inArrs[6];                   // gradient wrt Wx at previous time step, [iS, 3*nU]
-        NDArray<T>* dLdWhi = inArrs[7];                   // gradient wrt Wh at previous time step, [nU, 3*nU]
-        NDArray<T>* dLdbi  = inArrs[8];                   // gradient wrt b at previous time step,  [3*nU]  
+    else {                
 
-        *dLdWx += *dLdWxi;
-        *dLdWh += *dLdWhi;
-        *dLdb += *dLdbi;
+        *dLdWx += *dLdWx0;
+        *dLdWh += *dLdWh0;
+        *dLdb += *dLdb0;
     }    
 }
 
@@ -237,7 +236,7 @@ void gruTimeLoopBP(const std::vector<NDArray<T>*>& inArrs, const std::vector<NDA
     const Nd4jLong iS   = x->sizeAt(2);
     const Nd4jLong nU   = hi->sizeAt(1);    
     
-    NDArray h(hi->ordering(), {time, bS, nU});      // feed forward output
+    NDArray<T> h(hi->ordering(), {time, bS, nU});      // feed forward output
 
     // first step, time = 0, feed forward    
     NDArray<T> x0 = (*x)({{0,1}, {}, {}});
@@ -247,7 +246,7 @@ void gruTimeLoopBP(const std::vector<NDArray<T>*>& inArrs, const std::vector<NDA
     // first step, time = 0, back prop
     NDArray<T> dLdx0 = (*dLdx)({{0,1}, {}, {}});    
     NDArray<T> dLdh0 = (*dLdh)({{0,1}, {}, {}});    
-    helpers::gruCellBP<T>({&x0, hi, Wx, Wh, b, &dLdh0, nullptr, nullptr, nullptr}, {&dLdx0, dLdhi, dLdWx, dLdWh, dLdb}, true);
+    helpers::gruCellBP<T>({&x0, hi, Wx, Wh, b, &dLdh0, nullptr, nullptr, nullptr}, {&dLdx0, dLdhi, dLdWx, dLdWh, dLdb});
 
     // loop through the rest time steps 
     for (Nd4jLong t = 1; t < time; ++t) {        
@@ -255,23 +254,18 @@ void gruTimeLoopBP(const std::vector<NDArray<T>*>& inArrs, const std::vector<NDA
         NDArray<T> xt    =    (*x)({{t,t+1}, {}, {}});
         NDArray<T> ht    =       h({{t,t+1}, {}, {}});
         NDArray<T> ht_1  =       h({{t-1,t}, {}, {}});
-        dLdxt = (*dLdx)({{t,t+1}, {}, {}});    
-        dLdht = (*dLdh)({{t,t+1}, {}, {}});    
+        NDArray<T> dLdxt = (*dLdx)({{t,t+1}, {}, {}});    
+        NDArray<T> dLdht = (*dLdh)({{t,t+1}, {}, {}});    
 
-        NDArray<T> dLdWxi = dLdWx;
-        NDArray<T> dLdWhi = dLdWh;
-        NDArray<T> dLdbi  = dLdb;
+        NDArray<T> dLdWxt_1 = dLdWx;
+        NDArray<T> dLdWht_1 = dLdWh;
+        NDArray<T> dLdbt_1  = dLdb;
 
         // feed forward, calculation of ht
         helpers::gruCell<T>({&xt, &ht_1, Wx, Wh, b}, &ht);
 
         // back prop
-        helpers::gruCellBP<T>({&xt, &ht_1, Wx, Wh, b, &dLdh1, &dLdWxi, &dLdWhi, &dLdbi}, {&dLdx0, nullptr, dLdWx, dLdWh, dLdb}, false);        
-        NDArray<T> xt = (*x)({{t,t+1}, {}, {}});
-        
-
-        helpers::gruCellBP<T>({&xt, &ht_1, Wx, Wh, b}, &ht);
-        ht_1.assign(ht);    
+        helpers::gruCellBP<T>({&xt, &ht_1, Wx, Wh, b, &dLdht, &dLdWxt_1, &dLdWht_1, &dLdbt_1}, {&dLdxt, nullptr, dLdWx, dLdWh, dLdb});            
     }
 }
 
@@ -284,13 +278,13 @@ template void gruTimeLoop<float>(const std::vector<NDArray<float>*>& inArrs, NDA
 template void gruTimeLoop<float16>(const std::vector<NDArray<float16>*>& inArrs, NDArray<float16>* h);
 template void gruTimeLoop<double>(const std::vector<NDArray<double>*>& inArrs, NDArray<double>* h);
 
-template void gruCellBP<float>(const std::vector<NDArray<float>*>& inArrs, const std::vector<NDArray<float>*>& outArrs, const bool firstTimeStep);
-template void gruCellBP<float16>(const std::vector<NDArray<float16>*>& inArrs, const std::vector<NDArray<float16>*>& outArrs, const bool firstTimeStep);
-template void gruCellBP<double>(const std::vector<NDArray<double>*>& inArrs, const std::vector<NDArray<double>*>& outArrs, const bool firstTimeStep);
+template void gruCellBP<float>(const std::vector<NDArray<float>*>& inArrs, const std::vector<NDArray<float>*>& outArrs);
+template void gruCellBP<float16>(const std::vector<NDArray<float16>*>& inArrs, const std::vector<NDArray<float16>*>& outArrs);
+template void gruCellBP<double>(const std::vector<NDArray<double>*>& inArrs, const std::vector<NDArray<double>*>& outArrs);
 
-// template void gruTimeLoopBP<float>(const std::vector<NDArray<float>*>& inArrs, const std::vector<NDArray<float>*>& outArrs);
-// template void gruTimeLoopBP<float16>(const std::vector<NDArray<float16>*>& inArrs, const std::vector<NDArray<float16>*>& outArrs);
-// template void gruTimeLoopBP<double>(const std::vector<NDArray<double>*>& inArrs, const std::vector<NDArray<double>*>& outArrs);
+template void gruTimeLoopBP<float>(const std::vector<NDArray<float>*>& inArrs, const std::vector<NDArray<float>*>& outArrs);
+template void gruTimeLoopBP<float16>(const std::vector<NDArray<float16>*>& inArrs, const std::vector<NDArray<float16>*>& outArrs);
+template void gruTimeLoopBP<double>(const std::vector<NDArray<double>*>& inArrs, const std::vector<NDArray<double>*>& outArrs);
 
 
 }

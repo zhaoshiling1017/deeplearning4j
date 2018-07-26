@@ -1748,20 +1748,36 @@ TEST_F(DeclarableOpsTests9, gru_cell_bp_test3) {
     ASSERT_TRUE(isGradCorrect);
 }
 
+////////////////////////////////////////////////////////////////////
+// TEST_F(DeclarableOpsTests9, gru_bp_test1) {
 
- // NDArray<T>* x      = INPUT_VARIABLE(0);                         // input [bS x iS]
-  //   NDArray<T>* h0     = INPUT_VARIABLE(1);                         // previous cell output [bS x nU]     
-  //   NDArray<T>* Wx     = INPUT_VARIABLE(2);                         // input-to-hidden  weights, [iS x 3*nU] 
-  //   NDArray<T>* Wh     = INPUT_VARIABLE(3);                         // hidden-to-hidden weights, [nU x 3*nU] 
-  //   NDArray<T>* b      = INPUT_VARIABLE(4);                         // biases, [3*nU] 
-  //   NDArray<T>* dLdh   = INPUT_VARIABLE(5);                         // gradient wrt output, [bS,nU], that is epsilon_next
-  //   NDArray<T>* dLdWx0 = INPUT_VARIABLE(6);                         // gradient wrt Wx at previous time step, [iS, 3*nU]
-  //   NDArray<T>* dLdWh0 = INPUT_VARIABLE(7);                         // gradient wrt Wh at previous time step, [nU, 3*nU]
-  //   NDArray<T>* dLdb0  = INPUT_VARIABLE(8);                         // gradient wrt b at previous time step,  [3*nU]
-    
-  //   NDArray<T>* dLdx   = OUTPUT_VARIABLE(0);                        // gradient wrt x,  [bS, iS], that is epsilon
-  //   NDArray<T>* dLdh0  = OUTPUT_VARIABLE(1);                        // gradient wrt h0, [bS, nU]
-  //   NDArray<T>* dLdWx  = OUTPUT_VARIABLE(2);                        // gradient wrt Wx, [iS, 3*nU]
-  //   NDArray<T>* dLdWh  = OUTPUT_VARIABLE(3);                        // gradient wrt Wh, [nU, 3*nU]
-  //   NDArray<T>* dLdb   = OUTPUT_VARIABLE(4);                        // gradient wrt biases,  [3*nU]
+//     const int time = 5;
+//     const int bS   = 2;
+//     const int iS   = 3;
+//     const int nU   = 4;
 
+//     NDArray<double> x     ('c', {time, bS, iS});
+//     NDArray<double> h0    ('c', {bS, nU});
+//     NDArray<double> Wx    ('c', {iS, 3*nU});
+//     NDArray<double> Wh    ('c', {nU, 3*nU});
+//     NDArray<double> b     ('c', {3*nU});
+//     NDArray<double> dLdh  ('c', {time, bS, nU});
+
+//     x.linspace(0.5, 0.5);
+//     h0 = 1.;
+//     Wx = 0.003;
+//     Wh = 0.006;
+//     b  = 0.5;
+
+//     const OpArgsHolder<double> argsHolderFF({&x, &h0, &Wx, &Wh, &b}, {}, {});
+//     const OpArgsHolder<double> argsHolderBP({&x, &h0, &Wx, &Wh, &b, &dLdh}, {}, {});    
+
+//     nd4j::ops::gru<double> opFF;
+//     nd4j::ops::gru_bp<double> opBP;
+
+//     const bool isGradCorrect = GradCheck::checkGrad(opFF, opBP, argsHolderFF, argsHolderBP);
+
+//     ASSERT_TRUE(isGradCorrect);
+// }
+
+//  

@@ -168,7 +168,7 @@ CUSTOM_OP_IMPL(gru_cell_bp, 6, 5, false, 0, 0) {
     const std::vector<NDArray<T>*> inArrs  = {x, hi, Wx, Wh, b, dLdh, dLdWxi, dLdWhi, dLdbi};
     const std::vector<NDArray<T>*> outArrs = {dLdx, dLdhi, dLdWx, dLdWh, dLdb};
 
-    helpers::gruCellBP<T>(inArrs, outArrs, true);
+    helpers::gruCellBP<T>(inArrs, outArrs);
     
     return Status::OK();
 }
