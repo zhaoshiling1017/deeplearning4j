@@ -154,7 +154,7 @@ CUSTOM_OP_IMPL(gru_bp, 6, 5, false, 0, 0) {
     const std::vector<NDArray<T>*> inArrs  = {x, hi, Wx, Wh, b, dLdh};
     const std::vector<NDArray<T>*> outArrs = {dLdx, dLdhi, dLdWx, dLdWh, dLdb};
 
-    helpers::gruTimeLoopBP<T>(inArrs, outArrs);
+    // helpers::gruTimeLoopBP<T>(inArrs, outArrs);
     
     return Status::OK();
 }
