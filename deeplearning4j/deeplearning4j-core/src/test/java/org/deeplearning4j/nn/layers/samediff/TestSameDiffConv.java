@@ -43,7 +43,6 @@ import java.util.Map;
 import java.util.Random;
 
 import static org.junit.Assert.*;
-import static org.junit.Assume.assumeTrue;
 
 @Slf4j
 public class TestSameDiffConv extends BaseDL4JTest {
@@ -56,9 +55,6 @@ public class TestSameDiffConv extends BaseDL4JTest {
 
     @Test
     public void testSameDiffConvBasic() {
-        //Only run test for CPU backend for now:
-        assumeTrue("CPU".equalsIgnoreCase(Nd4j.getExecutioner().getEnvironmentInformation().getProperty("backend")));
-
         int nIn = 3;
         int nOut = 4;
         int kH = 2;
@@ -86,10 +82,6 @@ public class TestSameDiffConv extends BaseDL4JTest {
 
     @Test
     public void testSameDiffConvForward() {
-        //Only run test for CPU backend for now:
-        assumeTrue("CPU".equalsIgnoreCase(Nd4j.getExecutioner().getEnvironmentInformation().getProperty("backend")));
-
-
         int imgH = 16;
         int imgW = 20;
 
@@ -225,10 +217,6 @@ public class TestSameDiffConv extends BaseDL4JTest {
 
     @Test
     public void testSameDiffConvGradient() {
-        //Only run test for CPU backend for now:
-        assumeTrue("CPU".equalsIgnoreCase(Nd4j.getExecutioner().getEnvironmentInformation().getProperty("backend")));
-
-
         int imgH = 8;
         int imgW = 8;
         int nIn = 3;

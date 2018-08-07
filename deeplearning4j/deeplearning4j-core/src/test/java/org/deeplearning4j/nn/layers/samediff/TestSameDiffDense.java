@@ -23,9 +23,7 @@ import org.deeplearning4j.datasets.iterator.impl.IrisDataSetIterator;
 import org.deeplearning4j.gradientcheck.GradientCheckUtil;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
-import org.deeplearning4j.nn.conf.Updater;
 import org.deeplearning4j.nn.conf.WorkspaceMode;
-import org.deeplearning4j.nn.conf.inputs.InputType;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.gradient.Gradient;
@@ -43,11 +41,9 @@ import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.learning.config.NoOp;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 
-import java.util.Arrays;
 import java.util.Map;
 
 import static org.junit.Assert.*;
-import static org.junit.Assume.assumeTrue;
 
 @Slf4j
 public class TestSameDiffDense extends BaseDL4JTest {
@@ -60,9 +56,6 @@ public class TestSameDiffDense extends BaseDL4JTest {
 
     @Test
     public void testSameDiffDenseBasic() {
-        //Only run test for CPU backend for now:
-        assumeTrue("CPU".equalsIgnoreCase(Nd4j.getExecutioner().getEnvironmentInformation().getProperty("backend")));
-
         int nIn = 3;
         int nOut = 4;
 
@@ -86,9 +79,6 @@ public class TestSameDiffDense extends BaseDL4JTest {
 
     @Test
     public void testSameDiffDenseForward() {
-        //Only run test for CPU backend for now:
-        assumeTrue("CPU".equalsIgnoreCase(Nd4j.getExecutioner().getEnvironmentInformation().getProperty("backend")));
-
         for (int minibatch : new int[]{5, 1}) {
             int nIn = 3;
             int nOut = 4;
@@ -152,9 +142,6 @@ public class TestSameDiffDense extends BaseDL4JTest {
 
     @Test
     public void testSameDiffDenseForwardMultiLayer() {
-        //Only run test for CPU backend for now:
-        assumeTrue("CPU".equalsIgnoreCase(Nd4j.getExecutioner().getEnvironmentInformation().getProperty("backend")));
-
         for (int minibatch : new int[]{5, 1}) {
             int nIn = 3;
             int nOut = 4;
@@ -238,7 +225,6 @@ public class TestSameDiffDense extends BaseDL4JTest {
 
     @Test
     public void testSameDiffDenseBackward() {
-
         int nIn = 3;
         int nOut = 4;
 
