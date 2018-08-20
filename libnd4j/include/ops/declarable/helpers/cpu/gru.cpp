@@ -179,7 +179,7 @@ void gruCellBP(const std::vector<NDArray<T>*>& inArrs, const std::vector<NDArray
     NDArray<T> dLdu_dSig = (*dLdh) * dhdu * dSigdu;
     NDArray<T> dLdr_dSig = dLdn * dndr * dSigdu;
 
-    dLdx ->assign( mmul(dLdu_dSig, WxuT) + mmul(dLdr_dSig, WxrT) + mmul(dLdn_dAct, WxnT) );              // [bS,iS]
+    dLdx->assign( mmul(dLdu_dSig, WxuT) + mmul(dLdr_dSig, WxrT) + mmul(dLdn_dAct, WxnT) );              // [bS,iS]
     
     dLdWxr.assign( mmul(xT, dLdr_dSig) );                                                               //  [iS,nU]
     dLdWhr.assign( mmul(hiT, dLdr_dSig) );                                                              //  [nU,nU]
