@@ -20,6 +20,7 @@ import lombok.val;
 import onnx.OnnxProto3;
 import org.nd4j.autodiff.samediff.SDVariable;
 import org.nd4j.autodiff.samediff.SameDiff;
+import org.nd4j.base.Preconditions;
 import org.nd4j.imports.graphmapper.tf.TFGraphMapper;
 import org.nd4j.linalg.api.ops.DynamicCustomOp;
 import org.nd4j.linalg.api.ops.Op;
@@ -162,6 +163,10 @@ public class Range extends DynamicCustomOp {
             int stop = (int) iArgs[1];
             int step = (int) iArgs[2];
 
+            Preconditions.checkArgument(stop >= start, "Stop must be >= start: stop = %s, start = %s", stop, start);
+            if(start == stop)
+                return Collections.singletonList(new long[0]);
+
             double e = (double) start;
             if (start > stop) {
                 while (e > (double) stop) {
@@ -183,6 +188,10 @@ public class Range extends DynamicCustomOp {
             double stop = tArgs[1];
             double step = tArgs[2];
 
+            Preconditions.checkArgument(stop >= start, "Stop must be >= start: stop = %s, start = %s", stop, start);
+            if(start == stop)
+                return Collections.singletonList(new long[0]);
+
             double e = start;
             if (start > stop) {
                 while (e > stop) {
@@ -203,6 +212,10 @@ public class Range extends DynamicCustomOp {
             double start = inputArgs[0].getDouble(0);
             double stop = inputArgs[1].getDouble(0);
             double step = inputArgs[2].getDouble(0);
+
+            Preconditions.checkArgument(stop >= start, "Stop must be >= start: stop = %s, start = %s", stop, start);
+            if(start == stop)
+                return Collections.singletonList(new long[0]);
 
             double e = start;
             if (start > stop) {

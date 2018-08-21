@@ -10790,12 +10790,34 @@ public class SameDiff {
         val hash = getOpNum(node.opName(), node.opType());
         //log.info("Exporting node: [{}:<{}> ; OpType: {}; Hash/opNum: {}]", node.opName(), node.tensorflowName(), node.opType(), hash);
 
-        double[] extras = node.getExtraArgs() != null ? new double[node.getExtraArgs().length] : new double[0];
-        for (int e = 0; e < extras.length; e++) {
-            extras[e] = ((Number) node.getExtraArgs()[e]).doubleValue();
+        Object[] nodeExtraArgs = node.getExtraArgs();
+        double[] tArgs = null;
+        Boolean keepDim = null;
+        if(node instanceof DynamicCustomOp){
+            //tArgs go into extras
+            tArgs = ((DynamicCustomOp) node).tArgs();
+        } else if(node instanceof BaseAccumulation){
+            keepDim = ((BaseAccumulation) node).isKeepDims();
         }
 
-        long[] extraBits = null;
+        int numExtras = (nodeExtraArgs != null ? nodeExtraArgs.length : 0) + (tArgs != null ? tArgs.length : 0) + (keepDim != null ? 1 : 0);
+        double[] extras = new double[numExtras];
+        int x = 0;
+        if(nodeExtraArgs != null){
+            for( int i=0; i<nodeExtraArgs.length; i++ ){
+                extras[x++] = ((Number)nodeExtraArgs[i]).doubleValue();
+            }
+        }
+        if(tArgs != null){
+            for( int i=0; i<tArgs.length; i++ ){
+                extras[x++] = tArgs[i];
+            }
+        }
+        if(keepDim != null){
+            extras[x++] = (keepDim ? 1 : 0);
+        }
+
+        long[] extraBits;
         if (node.opType() == Op.Type.CUSTOM) {
             DynamicCustomOp dynamicCustomOp = (DynamicCustomOp) node;
             extraBits = dynamicCustomOp.iArgs();
@@ -10830,10 +10852,9 @@ public class SameDiff {
 
 
         val inputs = node.args();
-        log.trace("");
         for (val input : inputs) {
             //for (int i = 0; i < outputVertexId.length; i++) {
-            val pair = parseVariable(input.getVarName());
+            Pair<String,Integer> pair = parseVariable(input.getVarName());
             if (!reverseMap.containsKey(pair.getFirst())) {
                 if (pair.getFirst().contains("NextIteration")) {
                     // forward declaration: Merge node in case of loop will be referring to NextIteration node, which wasn't announced yet

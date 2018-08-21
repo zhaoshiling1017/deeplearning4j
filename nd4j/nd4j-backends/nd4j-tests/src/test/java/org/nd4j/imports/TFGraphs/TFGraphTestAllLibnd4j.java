@@ -68,7 +68,7 @@ public class TFGraphTestAllLibnd4j {
     public static final Set<String> SKIP_SET = new HashSet<>(Arrays.asList(SKIP_ARR));
 
     private static final String[] SKIP_FOR_LIBND4J_EXEC = new String[]{
-            //These are issues that need to be looked into more and fixed
+            //https://github.com/deeplearning4j/deeplearning4j/issues/6223
             "reductions/max.*",
             "reductions/mean.*",
             "reductions/min.*",
