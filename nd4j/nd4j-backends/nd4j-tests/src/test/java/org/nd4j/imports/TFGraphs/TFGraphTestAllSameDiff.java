@@ -87,9 +87,10 @@ public class TFGraphTestAllSameDiff {
             "matmul/rank5.*",
             //https://github.com/deeplearning4j/deeplearning4j/issues/6182
             "zeta.*",
-
-            //Not sure what's up here yet:
-            "svd/rank2_3,3_noFull_uv"
+            //https://github.com/deeplearning4j/deeplearning4j/issues/6225
+            "svd/rank2_3,3_noFull_uv",
+            //https://github.com/deeplearning4j/deeplearning4j/issues/6255
+            "losses/sparse_softmax.*"
     };
     public static final Set<String> SKIP_SET = new HashSet<>(Arrays.asList(SKIP_ARR));
 
