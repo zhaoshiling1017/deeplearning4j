@@ -16,7 +16,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ******************************************************************************/
 
-@Library('skymind@feature/improve-notifications') _
+@Library('skymind@bugfix/ppc64-docker') _
 
 /*
     To redefine some job/run parameters,
