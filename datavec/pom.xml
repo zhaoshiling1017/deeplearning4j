@@ -69,6 +69,7 @@
         <module>datavec-excel</module>
         <module>datavec-arrow</module>
         <module>datavec-perf</module>
+        <module>datavec-uberjar</module>
     </modules>
 
     <dependencies>
@@ -96,6 +97,22 @@
         </extensions>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>3.1.1</version>
+                    <configuration>
+                    <!-- put your configurations here -->
+                    </configuration>
+                    <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                        <goal>shade</goal>
+                        </goals>
+                    </execution>
+                    </executions>
+                </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-enforcer-plugin</artifactId>
@@ -276,6 +293,7 @@
                         <directory>datavec-camel</directory>
                         <directory>datavec-local</directory>
                         <directory>datavec-spark-inference-parent</directory>
+                        <directory>datavec-uberjar</directory>
                     </directories>
                 </configuration>
             </plugin>
