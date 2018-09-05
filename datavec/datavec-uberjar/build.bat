@@ -1,3 +1,3 @@
-mvn -Pnative-snapshots -Puberjar -Pspark1-2.1.0 clean install -DskipTests
-#mvn -Pnative-snapshots -Puberjar -Pspark1-2.1.1 clean install -DskipTests
-#mvn -Pnative-snapshots -Puberjar -Pspark2-2.1.1 clean install -DskipTests
+mvn -P uberjar -P spark1-2.10 clean install -D skipTests
+#mvn -P uberjar -P spark1-2.11 clean install -D skipTests
+#mvn -P uberjar -P spark2-2.11 clean install -D skipTests

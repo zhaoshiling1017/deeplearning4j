@@ -100,7 +100,22 @@
       </dependency>
       <dependency>
         <groupId>org.datavec</groupId>
-        <artifactId>datavec-data</artifactId>
+        <artifactId>datavec-data-audio</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.datavec</groupId>
+        <artifactId>datavec-data-codec</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.datavec</groupId>
+        <artifactId>datavec-data-image</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.datavec</groupId>
+        <artifactId>datavec-data-nlp</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -120,7 +135,12 @@
       </dependency>
       <dependency>
         <groupId>org.datavec</groupId>
-        <artifactId>datavec-spark-inference-parent</artifactId>
+        <artifactId>datavec-spark-inference-client</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.datavec</groupId>
+        <artifactId>datavec-spark-inference-model</artifactId>
         <version>${project.version}</version>
       </dependency>
     </dependencies>
@@ -132,27 +152,45 @@
     <id>spark1-2.10</id>
     <dependencies>
     <dependency>
+    <groupId>org.datavec</groupId>
     <artifactId>datavec-spark_2.10</artifactId>
     <version>1.0.0_spark_1-SNAPSHOT</version>
     </dependency>
+      <dependency>
+        <groupId>org.datavec</groupId>
+        <artifactId>datavec-spark-inference-server_2.10</artifactId>
+        <version>1.0.0_spark_1-SNAPSHOT</version>
+      </dependency>
     </dependencies>
   </profile>
   <profile>
     <id>spark1-2.11</id>
     <dependencies>
     <dependency>
+    <groupId>org.datavec</groupId>
     <artifactId>datavec-spark_2.11</artifactId>
     <version>1.0.0_spark_1-SNAPSHOT</version>
     </dependency>
+      <dependency>
+        <groupId>org.datavec</groupId>
+        <artifactId>datavec-spark-inference-server_2.11</artifactId>
+        <version>1.0.0_spark_1-SNAPSHOT</version>
+      </dependency>
     </dependencies>
   </profile>
   <profile>
     <id>spark2-2.11</id>
     <dependencies>
     <dependency>
+    <groupId>org.datavec</groupId>
     <artifactId>datavec-spark_2.11</artifactId>
-    <version>2.0.0_spark_1-SNAPSHOT</version>
+    <version>1.0.0_spark_2-SNAPSHOT</version>
     </dependency>
+      <dependency>
+        <groupId>org.datavec</groupId>
+        <artifactId>datavec-spark-inference-server_2.11</artifactId>
+        <version>1.0.0_spark_2-SNAPSHOT</version>
+      </dependency>
     </dependencies>
   </profile>
     <profile>
