@@ -60,7 +60,7 @@
         <module>nd4j-buffer</module>
         <module>nd4j-context</module>
         <module>nd4j-backends</module>
-        <module>nd4j-parameter-server-parent</module>
+        <!--<module>nd4j-parameter-server-parent</module>-->
         <module>nd4j-uberjar</module>
         <module>nd4j-tensorflow</module>
     </modules>
@@ -117,7 +117,22 @@
         </extensions>
 
         <plugins>
-
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>3.1.1</version>
+                    <configuration>
+                    <!-- put your configurations here -->
+                    </configuration>
+                    <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                        <goal>shade</goal>
+                        </goals>
+                    </execution>
+                    </executions>
+                </plugin>
             <!-- Configuration for git-commit-id plugin - used with ND4J version check functionality -->
             <plugin>
                 <groupId>pl.project13.maven</groupId>
@@ -212,6 +227,7 @@
                     </execution>
                 </executions>
             </plugin>
+            <!--
             <plugin>
                 <groupId>com.lewisd</groupId>
                 <artifactId>lint-maven-plugin</artifactId>
@@ -222,9 +238,11 @@
                     <rule>DuplicateDep</rule>
                     <rule>RedundantDepVersion</rule>
                     <rule>RedundantPluginVersion</rule>
+                    -->
                     <!-- Rules incompatible with Java 9
                     <rule>VersionProp</rule>
                     <rule>DotVersionProperty</rule> -->
+                    <!--
                   </onlyRunRules>
                 </configuration>
                 <executions>
@@ -237,6 +255,7 @@
                   </execution>
                 </executions>
               </plugin>
+              -->
             <plugin>
                 <groupId>net.revelc.code.formatter</groupId>
                 <artifactId>formatter-maven-plugin</artifactId>
@@ -251,7 +270,7 @@
                         <directory>nd4j-common</directory>
                         <directory>nd4j-buffer</directory>
                         <directory>nd4j-context</directory>
-                        <directory>nd4j-parameter-server-parent</directory>
+                        <!--<directory>nd4j-parameter-server-parent</directory>-->
                         <directory>nd4j-uberjar</directory>
                         <directory>nd4j-backends/nd4j-api-parent</directory>
                         <directory>nd4j-backends/nd4j-tests</directory>
