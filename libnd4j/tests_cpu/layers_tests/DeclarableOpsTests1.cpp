@@ -2684,6 +2684,7 @@ TEST_F(DeclarableOpsTests1, CompactLaunchTests1) {
 
     input.linspace(1);
     weights.linspace(1);
+    weights.permutei({2,3,1,0});
 
     nd4j::ops::deconv2d<double> op;
     auto result = op.execute({&input, &weights}, {}, {5, 5, 1, 1, 0, 0, 1, 1, 0, 0});
@@ -2710,7 +2711,7 @@ TEST_F(DeclarableOpsTests1, CompactLaunchTests2) {
 
     input.linspace(1);
     weights.linspace(1);
-
+    weights.permutei({2,3,1,0});
 
     nd4j::ops::deconv2d<double> op;
     auto result = op.execute({&input, &weights}, {&z}, {}, {5, 5, 1, 1, 0, 0, 1, 1, 0, 0});
@@ -2844,8 +2845,6 @@ TEST_F(DeclarableOpsTests1, batchnorm_test4) {
 
     delete results;
 }
-
-
 
 ////////////////////////////////////////////////////////////////////
 TEST_F(DeclarableOpsTests1, sru_old_test1) {
@@ -3741,7 +3740,7 @@ TEST_F(DeclarableOpsTests1, Stack_10) {
     float buff1[]   = {1};    
     float expBuff[] = {1, 1, 1};
     Nd4jLong shape1[]    = {1, 1, 1, 0, 1, 99};    
-    Nd4jLong expShape[]  = {2, 1, 3, 1, 1, 0, 1, 99};
+    Nd4jLong expShape[]  = {2, 1, 3, 3, 1, 0, 1, 99};
 
     NDArray<float> input1(buff1, shape1);    
     NDArray<float> expected(expBuff, expShape);
@@ -4638,7 +4637,7 @@ TEST_F(DeclarableOpsTests1, Test_Expose_2) {
     variableSpace.trackList(list);
 
     Context<float> block(1, &variableSpace);
-    block.pickInput(-1);
+    block.pickInput(-1); 
 
     nd4j::ops::expose<float> op;
     auto result = op.execute(&block);

@@ -1543,10 +1543,10 @@ public class SameDiffTests {
         SameDiff sd = SameDiff.create();
 
         INDArray input = Nd4j.rand(1, 10);
-        INDArray mean = Nd4j.rand(1, 10);
-        INDArray var = Nd4j.rand(1, 10);
-        INDArray gamma = Nd4j.rand(1, 10);
-        INDArray beta = Nd4j.rand(1, 10);
+        INDArray mean = Nd4j.rand(1, 10).reshape(10);
+        INDArray var = Nd4j.rand(1, 10).reshape(10);
+        INDArray gamma = Nd4j.rand(1, 10).reshape(10);
+        INDArray beta = Nd4j.rand(1, 10).reshape(10);
 
         SDVariable sdInput = sd.var("input", input);
         SDVariable sdMean = sd.var("mean", mean);
@@ -1555,7 +1555,7 @@ public class SameDiffTests {
         SDVariable sdBeta = sd.var("beta", beta);
 
         SDVariable out = sd.batchNorm(sdInput, sdMean, sdVar, sdGamma, sdBeta,
-                true, true, 0.0);
+                0.0, 1);
         out = sd.tanh("out", out);
 
         INDArray outArr = sd.execAndEndResult();
@@ -1658,7 +1658,7 @@ public class SameDiffTests {
 
 
         SameDiff sd = SameDiff.create();
-        INDArray depthWeightArr = Nd4j.create(depthWise, nIn, kH, kW);
+        INDArray depthWeightArr = Nd4j.create(kH, kW, nIn, depthWise);
 
         INDArray bArr = Nd4j.create(1, depthWise * nIn);
         INDArray inArr = Nd4j.create(mb, nIn, imgH, imgW);

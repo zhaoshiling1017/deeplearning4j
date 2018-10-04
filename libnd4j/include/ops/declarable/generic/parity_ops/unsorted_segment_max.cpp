@@ -33,8 +33,8 @@ namespace nd4j {
 
             Nd4jLong wrong;
 
-            REQUIRE_TRUE(helpers::unsortedSegmentIndicesValidate(idxSegments, numOfClasses, wrong), 0, "unsorted_segment_max: segment indices should be arranged, but %i > %i",
-                    numOfClasses, wrong);
+            REQUIRE_TRUE(helpers::unsortedSegmentIndicesValidate(idxSegments, numOfClasses, wrong), 0, "unsorted_segment_max: segment indices should be in range [0, %i), but %i > %i",
+                    numOfClasses, wrong, numOfClasses);
 
             helpers::unsortedSegmentMaxFunctor(input, idxSegments, numOfClasses, segmentedOutput);
 
@@ -59,6 +59,19 @@ namespace nd4j {
 
             return SHAPELIST(outputShape);
         }
-    }
 
+        CUSTOM_OP_IMPL(unsorted_segment_max_bp, 3, 2, false, 0, 1) {
+            return helpers::unsortedSegmentMaxFunctorBP(INPUT_VARIABLE(0), INPUT_VARIABLE(1), INPUT_VARIABLE(2), INT_ARG(0), OUTPUT_VARIABLE(0));
+        }
+        DECLARE_SHAPE_FN(unsorted_segment_max_bp){
+            Nd4jLong* in = inputShape->at(0);
+            Nd4jLong* inIdx = inputShape->at(1);
+
+            Nd4jLong* outShape;
+            Nd4jLong* outIndex;
+            COPY_SHAPE(in, outShape);
+            COPY_SHAPE(inIdx, outIndex);
+            return SHAPELIST(outShape, outIndex);
+        }
+    }
 }

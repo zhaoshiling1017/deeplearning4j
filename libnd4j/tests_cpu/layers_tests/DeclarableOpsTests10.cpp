@@ -175,6 +175,25 @@ TEST_F(DeclarableOpsTests10, Pad_SGO_Test_1) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+TEST_F(DeclarableOpsTests10, MirrorPad_SGO_Test_1) {
+
+    NDArray<double> in({1., 1., 1., 1., 1.});
+//    NDArray<double> pad('c', {1, 2}, {1., 1.});// = Nd4j.create(new double[]{1, 1}, new long[]{1, 2});
+    NDArray<double> pad('c', {1, 2}, {1., 1.});
+//    NDArray<double> value(10.0);
+
+    NDArray<double> exp({1., 1., 1., 1., 1., 1., 1.});
+
+    nd4j::ops::mirror_pad<double> op;
+
+    auto res = op.execute({&in, &pad}, {10.0}, {0});
+    ASSERT_EQ(res->status(), ND4J_STATUS_OK);
+    //res->at(0)->printIndexedBuffer("Mirror pad:");
+    ASSERT_TRUE(exp.equalsTo(res->at(0)));
+    delete res;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 TEST_F(DeclarableOpsTests10, Unique_SGO_Test_1) {
     NDArray<double> input({3., 4., 3., 1., 3., 0., 2., 4., 2., 4.});
     NDArray<double> expIdx({0., 1., 0., 2., 0., 3., 4., 1., 4., 1.});
@@ -1070,3 +1089,707 @@ TEST_F(DeclarableOpsTests10, broadcast_to_test10) {
 
     delete results;
 }
+
+//////////////////////////////////////////////////////////////////////
+TEST_F(DeclarableOpsTests10, deconv3d_test1) {
+
+    int bS=2, iD=4,iH=4,iW=4,  iC=2,oC=3,  kD=2,kH=2,kW=2,  sD=1,sH=1,sW=1,  pD=0,pH=0,pW=0,  dD=1,dH=1,dW=1;
+    int       oD=3,oH=3,oW=3;
+    int paddingMode = 0;             // 1-SAME, 0-VALID;
+    int dataFormat  = 1;             // 1-NDHWC, 0-NCDHW
+
+    NDArray<double> input   ('c', {bS, oD, oH, oW, oC});
+    NDArray<double> weights ('c', {kD, kH, kW, iC, oC});    
+    NDArray<double> exp('c', {bS, iD, iH, iW, iC}, {0.3 , 0.75, 1.5 , 2.4 , 1.5 , 2.4 , 1.2 , 1.65, 2.4 , 3.3 , 6.6 , 8.4 , 6.6 , 8.4 , 4.2 , 5.1 , 2.4 , 3.3 , 6.6 , 8.4 , 6.6 , 8.4 , 4.2 , 5.1 , 2.1 , 2.55, 5.1 , 6.  , 5.1 , 6.  , 3.  , 3.45,
+                                                    4.2 , 5.1 ,10.2 ,12.  ,10.2 ,12.  , 6.  , 6.9 ,12.  ,13.8 ,27.6 ,31.2 ,27.6 ,31.2 ,15.6 ,17.4 ,12.  ,13.8 ,27.6 ,31.2 ,27.6 ,31.2 ,15.6 ,17.4 , 7.8 , 8.7 ,17.4 ,19.2 ,17.4 ,19.2 , 9.6 ,10.5 ,
+                                                    4.2 , 5.1 ,10.2 ,12.  ,10.2 ,12.  , 6.  , 6.9 ,12.  ,13.8 ,27.6 ,31.2 ,27.6 ,31.2 ,15.6 ,17.4 ,12.  ,13.8 ,27.6 ,31.2 ,27.6 ,31.2 ,15.6 ,17.4 , 7.8 , 8.7 ,17.4 ,19.2 ,17.4 ,19.2 , 9.6 ,10.5 ,
+                                                    3.9 , 4.35, 8.7 , 9.6 , 8.7 , 9.6 , 4.8 , 5.25, 9.6 ,10.5 ,21.  ,22.8 ,21.  ,22.8 ,11.4 ,12.3 , 9.6 ,10.5 ,21.  ,22.8 ,21.  ,22.8 ,11.4 ,12.3 , 5.7 , 6.15,12.3 ,13.2 ,12.3 ,13.2 , 6.6 , 7.05,
+                                                    0.3 , 0.75, 1.5 , 2.4 , 1.5 , 2.4 , 1.2 , 1.65, 2.4 , 3.3 , 6.6 , 8.4 , 6.6 , 8.4 , 4.2 , 5.1 , 2.4 , 3.3 , 6.6 , 8.4 , 6.6 , 8.4 , 4.2 , 5.1 , 2.1 , 2.55, 5.1 , 6.  , 5.1 , 6.  , 3.  , 3.45,
+                                                    4.2 , 5.1 ,10.2 ,12.  ,10.2 ,12.  , 6.  , 6.9 ,12.  ,13.8 ,27.6 ,31.2 ,27.6 ,31.2 ,15.6 ,17.4 ,12.  ,13.8 ,27.6 ,31.2 ,27.6 ,31.2 ,15.6 ,17.4 , 7.8 , 8.7 ,17.4 ,19.2 ,17.4 ,19.2 , 9.6 ,10.5 ,
+                                                    4.2 , 5.1 ,10.2 ,12.  ,10.2 ,12.  , 6.  , 6.9 ,12.  ,13.8 ,27.6 ,31.2 ,27.6 ,31.2 ,15.6 ,17.4 ,12.  ,13.8 ,27.6 ,31.2 ,27.6 ,31.2 ,15.6 ,17.4 , 7.8 , 8.7 ,17.4 ,19.2 ,17.4 ,19.2 , 9.6 ,10.5 ,
+                                                    3.9 , 4.35, 8.7 , 9.6 , 8.7 , 9.6 , 4.8 , 5.25, 9.6 ,10.5 ,21.  ,22.8 ,21.  ,22.8 ,11.4 ,12.3 , 9.6 ,10.5 ,21.  ,22.8 ,21.  ,22.8 ,11.4 ,12.3 , 5.7 , 6.15,12.3 ,13.2 ,12.3 ,13.2 , 6.6 , 7.05});
+    input = 0.5;
+    weights.linspace(0.1, 0.1);
+
+    nd4j::ops::deconv3d<double> op;
+    ResultSet<double>* results = op.execute({&input, &weights}, {}, {kD,kH,kW,  sD,sH,sW,  pD,pH,pW,  dD,dH,dW, paddingMode, dataFormat});
+    NDArray<double>* output = results->at(0);            
+
+    ASSERT_EQ(Status::OK(), results->status());
+    ASSERT_TRUE(exp.isSameShape(output));
+    ASSERT_TRUE(exp.equalsTo(output));
+    
+    delete results;
+}
+  
+//////////////////////////////////////////////////////////////////////
+TEST_F(DeclarableOpsTests10, deconv3d_test2) {
+
+    int bS=2, iD=4,iH=4,iW=4,  iC=2,oC=3,  kD=2,kH=2,kW=2,  sD=1,sH=1,sW=1,  pD=0,pH=0,pW=0,  dD=1,dH=1,dW=1;
+    int       oD=4,oH=4,oW=4;
+    int paddingMode = 1;             // 1-SAME, 0-VALID;
+    int dataFormat  = 1;             // 1-NDHWC, 0-NCDHW
+
+    NDArray<double> input   ('c', {bS, oD, oH, oW, oC});
+    NDArray<double> weights ('c', {kD, kH, kW, iC, oC});    
+    NDArray<double> exp('c', {bS, iD, iH, iW, iC}, {0.3 ,  0.75, 1.5 ,  2.4 , 1.5 ,  2.4 , 1.5 ,  2.4 , 2.4 ,  3.3 , 6.6 ,  8.4 , 6.6 ,  8.4 , 6.6 ,  8.4 , 2.4 ,  3.3 , 6.6 ,  8.4 , 6.6 ,  8.4 , 6.6 ,  8.4 , 2.4 ,  3.3 , 6.6 ,  8.4 , 6.6 ,  8.4 , 6.6 ,  8.4 ,
+                                                    4.2 ,  5.1 ,10.2 , 12.  ,10.2 , 12.  ,10.2 , 12.  ,12.  , 13.8 ,27.6 , 31.2 ,27.6 , 31.2 ,27.6 , 31.2 ,12.  , 13.8 ,27.6 , 31.2 ,27.6 , 31.2 ,27.6 , 31.2 ,12.  , 13.8 ,27.6 , 31.2 ,27.6 , 31.2 ,27.6 , 31.2 ,
+                                                    4.2 ,  5.1 ,10.2 , 12.  ,10.2 , 12.  ,10.2 , 12.  ,12.  , 13.8 ,27.6 , 31.2 ,27.6 , 31.2 ,27.6 , 31.2 ,12.  , 13.8 ,27.6 , 31.2 ,27.6 , 31.2 ,27.6 , 31.2 ,12.  , 13.8 ,27.6 , 31.2 ,27.6 , 31.2 ,27.6 , 31.2 ,
+                                                    4.2 ,  5.1 ,10.2 , 12.  ,10.2 , 12.  ,10.2 , 12.  ,12.  , 13.8 ,27.6 , 31.2 ,27.6 , 31.2 ,27.6 , 31.2 ,12.  , 13.8 ,27.6 , 31.2 ,27.6 , 31.2 ,27.6 , 31.2 ,12.  , 13.8 ,27.6 , 31.2 ,27.6 , 31.2 ,27.6 , 31.2 ,
+                                                    0.3 ,  0.75, 1.5 ,  2.4 , 1.5 ,  2.4 , 1.5 ,  2.4 , 2.4 ,  3.3 , 6.6 ,  8.4 , 6.6 ,  8.4 , 6.6 ,  8.4 , 2.4 ,  3.3 , 6.6 ,  8.4 , 6.6 ,  8.4 , 6.6 ,  8.4 , 2.4 ,  3.3 , 6.6 ,  8.4 , 6.6 ,  8.4 , 6.6 ,  8.4 ,
+                                                    4.2 ,  5.1 ,10.2 , 12.  ,10.2 , 12.  ,10.2 , 12.  ,12.  , 13.8 ,27.6 , 31.2 ,27.6 , 31.2 ,27.6 , 31.2 ,12.  , 13.8 ,27.6 , 31.2 ,27.6 , 31.2 ,27.6 , 31.2 ,12.  , 13.8 ,27.6 , 31.2 ,27.6 , 31.2 ,27.6 , 31.2 ,
+                                                    4.2 ,  5.1 ,10.2 , 12.  ,10.2 , 12.  ,10.2 , 12.  ,12.  , 13.8 ,27.6 , 31.2 ,27.6 , 31.2 ,27.6 , 31.2 ,12.  , 13.8 ,27.6 , 31.2 ,27.6 , 31.2 ,27.6 , 31.2 ,12.  , 13.8 ,27.6 , 31.2 ,27.6 , 31.2 ,27.6 , 31.2 ,
+                                                    4.2 ,  5.1 ,10.2 , 12.  ,10.2 , 12.  ,10.2 , 12.  ,12.  , 13.8 ,27.6 , 31.2 ,27.6 , 31.2 ,27.6 , 31.2 ,12.  , 13.8 ,27.6 , 31.2 ,27.6 , 31.2 ,27.6 , 31.2 ,12.  , 13.8 ,27.6 , 31.2 ,27.6 , 31.2 ,27.6 , 31.2 });
+    input = 0.5;
+    weights.linspace(0.1, 0.1);
+
+    nd4j::ops::deconv3d<double> op;
+    ResultSet<double>* results = op.execute({&input, &weights}, {}, {kD,kH,kW,  sD,sH,sW,  pD,pH,pW,  dD,dH,dW, paddingMode, dataFormat});
+    NDArray<double>* output = results->at(0);            
+
+    ASSERT_EQ(Status::OK(), results->status());
+    ASSERT_TRUE(exp.isSameShape(output));
+    ASSERT_TRUE(exp.equalsTo(output));
+    
+    delete results;
+}
+  
+//////////////////////////////////////////////////////////////////////
+TEST_F(DeclarableOpsTests10, deconv3d_test3) {
+
+    int bS=2, iD=4,iH=4,iW=4,  iC=2,oC=3,  kD=2,kH=2,kW=2,  sD=1,sH=1,sW=1,  pD=0,pH=0,pW=0,  dD=1,dH=1,dW=1;
+    int       oD=3,oH=3,oW=3;
+    int paddingMode = 0;             // 1-SAME, 0-VALID;
+    int dataFormat  = 0;             // 1-NDHWC, 0-NCDHW
+
+    NDArray<double> input   ('c', {bS, oC, oD, oH, oW});
+    NDArray<double> weights ('c', {oC, iC, kD, kH, kW});
+    NDArray<double> exp('c', {bS, iC, iD, iH, iW}, {2.55,  5.25,  5.25,  2.7, 5.4 , 11.1 , 11.1 ,  5.7, 5.4 , 11.1 , 11.1 ,  5.7, 2.85,  5.85,  5.85,  3. , 5.7 , 11.7 , 11.7 ,  6. ,12.  , 24.6 , 24.6 , 12.6,12.  , 24.6 , 24.6 , 12.6, 6.3 , 12.9 , 12.9 ,  6.6,
+                                                    5.7 , 11.7 , 11.7 ,  6. ,12.  , 24.6 , 24.6 , 12.6,12.  , 24.6 , 24.6 , 12.6, 6.3 , 12.9 , 12.9 ,  6.6, 3.15,  6.45,  6.45,  3.3, 6.6 , 13.5 , 13.5 ,  6.9, 6.6 , 13.5 , 13.5 ,  6.9, 3.45,  7.05,  7.05,  3.6,
+                                                    3.75,  7.65,  7.65,  3.9, 7.8 , 15.9 , 15.9 ,  8.1, 7.8 , 15.9 , 15.9 ,  8.1, 4.05,  8.25,  8.25,  4.2, 8.1 , 16.5 , 16.5 ,  8.4,16.8 , 34.2 , 34.2 , 17.4,16.8 , 34.2 , 34.2 , 17.4, 8.7 , 17.7 , 17.7 ,  9. ,
+                                                    8.1 , 16.5 , 16.5 ,  8.4,16.8 , 34.2 , 34.2 , 17.4,16.8 , 34.2 , 34.2 , 17.4, 8.7 , 17.7 , 17.7 ,  9. , 4.35,  8.85,  8.85,  4.5, 9.  , 18.3 , 18.3 ,  9.3, 9.  , 18.3 , 18.3 ,  9.3, 4.65,  9.45,  9.45,  4.8,
+                                                    2.55,  5.25,  5.25,  2.7, 5.4 , 11.1 , 11.1 ,  5.7, 5.4 , 11.1 , 11.1 ,  5.7, 2.85,  5.85,  5.85,  3. , 5.7 , 11.7 , 11.7 ,  6. ,12.  , 24.6 , 24.6 , 12.6,12.  , 24.6 , 24.6 , 12.6, 6.3 , 12.9 , 12.9 ,  6.6,
+                                                    5.7 , 11.7 , 11.7 ,  6. ,12.  , 24.6 , 24.6 , 12.6,12.  , 24.6 , 24.6 , 12.6, 6.3 , 12.9 , 12.9 ,  6.6, 3.15,  6.45,  6.45,  3.3, 6.6 , 13.5 , 13.5 ,  6.9, 6.6 , 13.5 , 13.5 ,  6.9, 3.45,  7.05,  7.05,  3.6,
+                                                    3.75,  7.65,  7.65,  3.9, 7.8 , 15.9 , 15.9 ,  8.1, 7.8 , 15.9 , 15.9 ,  8.1, 4.05,  8.25,  8.25,  4.2, 8.1 , 16.5 , 16.5 ,  8.4,16.8 , 34.2 , 34.2 , 17.4,16.8 , 34.2 , 34.2 , 17.4, 8.7 , 17.7 , 17.7 ,  9. ,
+                                                    8.1 , 16.5 , 16.5 ,  8.4,16.8 , 34.2 , 34.2 , 17.4,16.8 , 34.2 , 34.2 , 17.4, 8.7 , 17.7 , 17.7 ,  9. , 4.35,  8.85,  8.85,  4.5, 9.  , 18.3 , 18.3 ,  9.3, 9.  , 18.3 , 18.3 ,  9.3, 4.65,  9.45,  9.45,  4.8});
+    input = 0.5;
+    weights.linspace(0.1, 0.1);
+    weights.permutei({2, 3, 4, 1, 0});
+
+    nd4j::ops::deconv3d<double> op;
+    ResultSet<double>* results = op.execute({&input, &weights}, {}, {kD,kH,kW,  sD,sH,sW,  pD,pH,pW,  dD,dH,dW, paddingMode, dataFormat});
+    NDArray<double>* output = results->at(0);            
+
+    ASSERT_EQ(Status::OK(), results->status());
+    ASSERT_TRUE(exp.isSameShape(output));
+    ASSERT_TRUE(exp.equalsTo(output));
+    
+    delete results;
+}
+
+//////////////////////////////////////////////////////////////////////
+TEST_F(DeclarableOpsTests10, deconv3d_test4) {
+
+    int bS=2, iD=2,iH=2,iW=2,  iC=2,oC=3,  kD=2,kH=2,kW=2,  sD=1,sH=1,sW=1,  pD=1,pH=1,pW=1,  dD=1,dH=1,dW=1;
+    int       oD=3,oH=3,oW=3;
+    int paddingMode = 0;             // 1-SAME, 0-VALID;
+    int dataFormat  = 0;             // 1-NDHWC, 0-NCDHW
+
+    NDArray<double> input   ('c', {bS, oC, oD, oH, oW});
+    NDArray<double> weights ('c', {oC, iC, kD, kH, kW});
+    NDArray<double> exp('c', {bS, iC, iD, iH, iW}, {24.6, 24.6,24.6, 24.6,24.6, 24.6,24.6, 24.6,34.2, 34.2,34.2, 34.2,34.2, 34.2,34.2, 34.2,24.6, 24.6,24.6, 24.6,
+                                                    24.6, 24.6,24.6, 24.6,34.2, 34.2,34.2, 34.2,34.2, 34.2,34.2, 34.2});
+    input = 0.5;
+    weights.linspace(0.1, 0.1);
+    weights.permutei({2, 3, 4, 1, 0});
+
+    nd4j::ops::deconv3d<double> op;
+    ResultSet<double>* results = op.execute({&input, &weights}, {}, {kD,kH,kW,  sD,sH,sW,  pD,pH,pW,  dD,dH,dW, paddingMode, dataFormat});
+    NDArray<double>* output = results->at(0);            
+
+    ASSERT_EQ(Status::OK(), results->status());
+    ASSERT_TRUE(exp.isSameShape(output));
+    ASSERT_TRUE(exp.equalsTo(output));
+    
+    delete results;
+}
+
+//////////////////////////////////////////////////////////////////////
+TEST_F(DeclarableOpsTests10, deconv3d_bp_test1) {
+
+    int bS=1, iD=3,iH=3,iW=3,  iC=1,oC=2,  kD=2,kH=2,kW=2,  sD=1,sH=1,sW=1,  pD=0,pH=0,pW=0,  dD=1,dH=1,dW=1;
+    int       oD=2,oH=2,oW=2;
+    int paddingMode = 0;             // 1-SAME, 0-VALID;
+    int dataFormat  = 1;             // 1-NDHWC, 0-NCDHW
+
+    NDArray<double> input   ('c', {bS, oD, oH, oW, oC});
+    NDArray<double> weights ('c', {kD, kH, kW, iC, oC});
+    NDArray<double> bias    ('c', {iC});
+    NDArray<double> gradO   ('c', {bS, iD, iH, iW, iC});
+    
+    input = 0.5;
+    weights.linspace(0.1, 0.1);
+    gradO.linspace(0.5);
+
+    const OpArgsHolder<double> argsHolderFF({&input, &weights, &bias},         {}, {kD,kH,kW,  sD,sH,sW,  pD,pH,pW,  dD,dH,dW, paddingMode, dataFormat});
+    const OpArgsHolder<double> argsHolderBP({&input, &weights, &bias, &gradO}, {}, {kD,kH,kW,  sD,sH,sW,  pD,pH,pW,  dD,dH,dW, paddingMode, dataFormat});
+
+    nd4j::ops::deconv3d<double> opFF;
+    nd4j::ops::deconv3d_bp<double> opBP;  
+
+    const bool isGradCorrect = GradCheck::checkGrad(opFF, opBP, argsHolderFF, argsHolderBP);
+
+    ASSERT_TRUE(isGradCorrect);
+}
+
+//////////////////////////////////////////////////////////////////////
+TEST_F(DeclarableOpsTests10, deconv3d_bp_test2) {
+
+    int bS=1, iD=2,iH=2,iW=2,  iC=1,oC=2,  kD=2,kH=2,kW=2,  sD=1,sH=1,sW=1,  pD=0,pH=0,pW=0,  dD=1,dH=1,dW=1;
+    int       oD=2,oH=2,oW=2;
+    int paddingMode = 1;             // 1-SAME, 0-VALID;
+    int dataFormat  = 1;             // 1-NDHWC, 0-NCDHW
+
+    NDArray<double> input   ('c', {bS, oD, oH, oW, oC});
+    NDArray<double> weights ('c', {kD, kH, kW, iC, oC});
+    NDArray<double> gradO   ('c', {bS, iD, iH, iW, iC});
+    
+    input = 0.5;
+    weights.linspace(0.1, 0.1);
+    gradO.linspace(0.5);
+
+    const OpArgsHolder<double> argsHolderFF({&input, &weights},         {}, {kD,kH,kW,  sD,sH,sW,  pD,pH,pW,  dD,dH,dW, paddingMode, dataFormat});
+    const OpArgsHolder<double> argsHolderBP({&input, &weights, &gradO}, {}, {kD,kH,kW,  sD,sH,sW,  pD,pH,pW,  dD,dH,dW, paddingMode, dataFormat});
+
+    nd4j::ops::deconv3d<double> opFF;
+    nd4j::ops::deconv3d_bp<double> opBP;  
+
+    const bool isGradCorrect = GradCheck::checkGrad(opFF, opBP, argsHolderFF, argsHolderBP);
+
+    ASSERT_TRUE(isGradCorrect);
+}
+
+//////////////////////////////////////////////////////////////////////
+TEST_F(DeclarableOpsTests10, deconv3d_bp_test3) {
+
+    int bS=1, iD=3,iH=3,iW=3,  iC=1,oC=2,  kD=2,kH=2,kW=2,  sD=1,sH=1,sW=1,  pD=0,pH=0,pW=0,  dD=1,dH=1,dW=1;
+    int       oD=2,oH=2,oW=2;
+    int paddingMode = 0;             // 1-SAME, 0-VALID;
+    int dataFormat  = 0;             // 1-NDHWC, 0-NCDHW
+
+    NDArray<double> input   ('c', {bS, oC, oD, oH, oW});
+    NDArray<double> weights ('c', {oC, iC, kD, kH, kW});
+    NDArray<double> gradO   ('c', {bS, iC, iD, iH, iW});
+    
+    input = 0.5;
+    weights.linspace(0.1, 0.1);
+    gradO.linspace(0.5);
+    weights.permutei({2, 3, 4, 1, 0});
+
+    const OpArgsHolder<double> argsHolderFF({&input, &weights},         {}, {kD,kH,kW,  sD,sH,sW,  pD,pH,pW,  dD,dH,dW, paddingMode, dataFormat});
+    const OpArgsHolder<double> argsHolderBP({&input, &weights, &gradO}, {}, {kD,kH,kW,  sD,sH,sW,  pD,pH,pW,  dD,dH,dW, paddingMode, dataFormat});
+
+    nd4j::ops::deconv3d<double> opFF;
+    nd4j::ops::deconv3d_bp<double> opBP;  
+
+    const bool isGradCorrect = GradCheck::checkGrad(opFF, opBP, argsHolderFF, argsHolderBP);
+
+    ASSERT_TRUE(isGradCorrect);
+}
+
+//////////////////////////////////////////////////////////////////////
+TEST_F(DeclarableOpsTests10, deconv3d_bp_test4) {
+
+    int bS=1, iD=2,iH=2,iW=2,  iC=1,oC=2,  kD=2,kH=2,kW=2,  sD=1,sH=1,sW=1,  pD=1,pH=1,pW=1,  dD=1,dH=1,dW=1;
+    int       oD=3,oH=3,oW=3;
+    int paddingMode = 0;             // 1-SAME, 0-VALID;
+    int dataFormat  = 0;             // 1-NDHWC, 0-NCDHW
+
+    NDArray<double> input   ('c', {bS, oC, oD, oH, oW});
+    NDArray<double> weights ('c', {oC, iC, kD, kH, kW});
+    NDArray<double> gradO   ('c', {bS, iC, iD, iH, iW});
+    
+    input = 0.5;
+    weights.linspace(0.1, 0.1);
+    gradO.linspace(0.5);
+    weights.permutei({2, 3, 4, 1, 0});
+
+    const OpArgsHolder<double> argsHolderFF({&input, &weights},         {}, {kD,kH,kW,  sD,sH,sW,  pD,pH,pW,  dD,dH,dW, paddingMode, dataFormat});
+    const OpArgsHolder<double> argsHolderBP({&input, &weights, &gradO}, {}, {kD,kH,kW,  sD,sH,sW,  pD,pH,pW,  dD,dH,dW, paddingMode, dataFormat});
+
+    nd4j::ops::deconv3d<double> opFF;
+    nd4j::ops::deconv3d_bp<double> opBP;  
+
+    const bool isGradCorrect = GradCheck::checkGrad(opFF, opBP, argsHolderFF, argsHolderBP);
+
+    ASSERT_TRUE(isGradCorrect);
+}
+
+////////////////////////////////////////////////////////////////////
+TEST_F(DeclarableOpsTests10, pad_tests10) {
+
+    NDArray<float> input   ('c', {2,3,4});
+    NDArray<float> paddings('c', {3,2}, {0,0, 0,1, 0,0});
+    NDArray<float> expected('c', {2,4,4}, {1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,0.,0.,0.,0.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,0.,0.,0.,0.});
+
+    input = 1.f;
+
+    nd4j::ops::pad<float> op;
+    auto results = op.execute({&input, &paddings}, {}, {0});
+
+    ASSERT_EQ(ND4J_STATUS_OK, results->status());
+
+    NDArray<float>* result = results->at(0);    
+
+    ASSERT_TRUE(expected.isSameShapeStrict(result));
+    ASSERT_TRUE(expected.equalsTo(result));
+
+    delete results;
+}
+
+////////////////////////////////////////////////////////////////////
+TEST_F(DeclarableOpsTests10, pad_tests11) {
+
+    NDArray<float> input   ('c', {2,3,4});
+    NDArray<float> paddings('c', {3,2}, {0,0, 0,1, 0,0});
+    NDArray<float> expected('c', {2,4,4}, {1., 2., 3., 4., 5., 6., 7., 8., 9.,10.,11.,12., 5., 6., 7., 8.,13.,14.,15.,16.,17.,18.,19.,20.,21.,22.,23.,24.,17.,18.,19.,20.});
+
+    input.linspace(1.f);
+
+    nd4j::ops::pad<float> op;
+    auto results = op.execute({&input, &paddings}, {}, {1});
+
+    ASSERT_EQ(ND4J_STATUS_OK, results->status());
+
+    NDArray<float>* result = results->at(0);    
+
+    ASSERT_TRUE(expected.isSameShapeStrict(result));
+    ASSERT_TRUE(expected.equalsTo(result));
+
+    delete results;
+}
+
+////////////////////////////////////////////////////////////////////
+TEST_F(DeclarableOpsTests10, pad_tests12) {
+
+    NDArray<float> input   ('c', {2,3,4,5});
+    NDArray<float> paddings('c', {4,2}, {0,0, 0,1, 0,1, 0,0});
+    NDArray<float> expected('c', {2,4,5,5}, { 1.,  2.,  3.,  4.,  5.,  6.,  7.,  8.,  9., 10., 11., 12., 13., 14., 15., 16., 17., 18., 19., 20., 16., 17., 18., 19., 20.,
+                                             21., 22., 23., 24., 25., 26., 27., 28., 29., 30., 31., 32., 33., 34., 35., 36., 37., 38., 39., 40., 36., 37., 38., 39., 40.,
+                                             41., 42., 43., 44., 45., 46., 47., 48., 49., 50., 51., 52., 53., 54., 55., 56., 57., 58., 59., 60., 56., 57., 58., 59., 60.,
+                                             41., 42., 43., 44., 45., 46., 47., 48., 49., 50., 51., 52., 53., 54., 55., 56., 57., 58., 59., 60., 56., 57., 58., 59., 60.,
+                                             61., 62., 63., 64., 65., 66., 67., 68., 69., 70., 71., 72., 73., 74., 75., 76., 77., 78., 79., 80., 76., 77., 78., 79., 80.,
+                                             81., 82., 83., 84., 85., 86., 87., 88., 89., 90., 91., 92., 93., 94., 95., 96., 97., 98., 99.,100., 96., 97., 98., 99.,100.,
+                                            101.,102.,103.,104.,105.,106.,107.,108.,109.,110.,111.,112.,113.,114.,115.,116.,117.,118.,119.,120.,116.,117.,118.,119.,120.,
+                                            101.,102.,103.,104.,105.,106.,107.,108.,109.,110.,111.,112.,113.,114.,115.,116.,117.,118.,119.,120.,116.,117.,118.,119.,120.});
+    input.linspace(1.f);
+
+    nd4j::ops::pad<float> op;
+    auto results = op.execute({&input, &paddings}, {}, {2});
+
+    ASSERT_EQ(ND4J_STATUS_OK, results->status());
+
+    NDArray<float>* result = results->at(0);    
+    // result->printIndexedBuffer();
+
+    ASSERT_TRUE(expected.isSameShapeStrict(result));
+    ASSERT_TRUE(expected.equalsTo(result));
+
+    delete results;
+}
+
+////////////////////////////////////////////////////////////////////
+TEST_F(DeclarableOpsTests10, pad_tests13) {
+
+    NDArray<float> input   ('c', {5});
+    NDArray<float> paddings('c', {1,2}, {2,3});
+    NDArray<float> expected('c', {10}, {3., 2., 1., 2., 3., 4., 5., 4., 3., 2.});
+    input.linspace(1.f);
+
+    nd4j::ops::pad<float> op;
+    auto results = op.execute({&input, &paddings}, {}, {1});
+
+    ASSERT_EQ(ND4J_STATUS_OK, results->status());
+
+    NDArray<float>* result = results->at(0);    
+    // result->printIndexedBuffer();
+
+    ASSERT_TRUE(expected.isSameShapeStrict(result));
+    ASSERT_TRUE(expected.equalsTo(result));
+
+    delete results;
+}
+
+////////////////////////////////////////////////////////////////////
+TEST_F(DeclarableOpsTests10, pad_tests14) {
+
+    NDArray<float> input   ('c', {1,5});
+    NDArray<float> paddings('c', {2,2}, {0,0,2,3});
+    NDArray<float> expected('c', {1,10}, {2., 1., 1., 2., 3., 4., 5., 5., 4., 3.});
+    input.linspace(1.f);
+
+    nd4j::ops::pad<float> op;
+    auto results = op.execute({&input, &paddings}, {}, {2});
+
+    ASSERT_EQ(ND4J_STATUS_OK, results->status());
+
+    NDArray<float>* result = results->at(0);    
+
+    ASSERT_TRUE(expected.isSameShapeStrict(result));
+    ASSERT_TRUE(expected.equalsTo(result));
+
+    delete results;
+}
+
+////////////////////////////////////////////////////////////////////
+TEST_F(DeclarableOpsTests10, pad_tests15) {
+
+    NDArray<float> input   ('c', {1,5});
+    NDArray<float> paddings('c', {2,2}, {1,1,0,0});
+    NDArray<float> expected('c', {3,5}, {1., 2., 3., 4., 5., 1., 2., 3., 4., 5., 1., 2., 3., 4., 5.});
+    input.linspace(1.f);
+
+    nd4j::ops::pad<float> op;
+    auto results = op.execute({&input, &paddings}, {}, {2});
+
+    ASSERT_EQ(ND4J_STATUS_OK, results->status());
+
+    NDArray<float>* result = results->at(0);    
+
+    ASSERT_TRUE(expected.isSameShapeStrict(result));
+    ASSERT_TRUE(expected.equalsTo(result));
+
+    delete results;
+}
+
+////////////////////////////////////////////////////////////////////
+TEST_F(DeclarableOpsTests10, pad_tests16) {
+
+    NDArray<float> input   ('c', {5,1});
+    NDArray<float> paddings('c', {2,2}, {2,3,0,0});
+    NDArray<float> expected('c', {10,1}, {3., 2., 1., 2., 3., 4., 5., 4., 3., 2.});
+    input.linspace(1.f);
+
+    nd4j::ops::pad<float> op;
+    auto results = op.execute({&input, &paddings}, {}, {1});
+
+    ASSERT_EQ(ND4J_STATUS_OK, results->status());
+
+    NDArray<float>* result = results->at(0);    
+
+    ASSERT_TRUE(expected.isSameShapeStrict(result));
+    ASSERT_TRUE(expected.equalsTo(result));
+
+    delete results;
+}
+
+////////////////////////////////////////////////////////////////////
+TEST_F(DeclarableOpsTests10, pad_tests17) {
+
+    NDArray<float> input   ('c', {5,1});
+    NDArray<float> paddings('c', {2,2}, {0,0,1,0});
+    NDArray<float> expected('c', {5,2}, {1.,1., 2.,2., 3.,3., 4.,4., 5.,5.});
+    input.linspace(1.f);
+
+    nd4j::ops::pad<float> op;
+    auto results = op.execute({&input, &paddings}, {}, {2});
+
+    ASSERT_EQ(ND4J_STATUS_OK, results->status());
+
+    NDArray<float>* result = results->at(0);    
+
+    ASSERT_TRUE(expected.isSameShapeStrict(result));
+    ASSERT_TRUE(expected.equalsTo(result));
+
+    delete results;
+}
+
+////////////////////////////////////////////////////////////////////
+TEST_F(DeclarableOpsTests10, pad_tests18) {
+
+    NDArray<float> input   ('c', {5});
+    NDArray<float> paddings('c', {1,2}, {0,0});
+    NDArray<float> expected('c', {5}, {1.,2.,3.,4.,5.});
+    input.linspace(1.f);
+
+    nd4j::ops::pad<float> op;
+    auto results = op.execute({&input, &paddings}, {}, {1});
+
+    ASSERT_EQ(ND4J_STATUS_OK, results->status());
+
+    NDArray<float>* result = results->at(0);    
+
+    ASSERT_TRUE(expected.isSameShapeStrict(result));
+    ASSERT_TRUE(expected.equalsTo(result));
+
+    delete results;
+}
+
+////////////////////////////////////////////////////////////////////
+TEST_F(DeclarableOpsTests10, pad_tests19) {
+
+    NDArray<float> input   ('c', {5,1});
+    NDArray<float> paddings('c', {2,2}, {0,0,0,0});
+    NDArray<float> expected('c', {5,1}, {1., 2., 3., 4., 5.});
+    input.linspace(1.f);
+
+    nd4j::ops::pad<float> op;
+    auto results = op.execute({&input, &paddings}, {}, {1});
+
+    ASSERT_EQ(ND4J_STATUS_OK, results->status());
+
+    NDArray<float>* result = results->at(0);    
+
+    ASSERT_TRUE(expected.isSameShapeStrict(result));
+    ASSERT_TRUE(expected.equalsTo(result));
+
+    delete results;
+}
+
+////////////////////////////////////////////////////////////////////
+TEST_F(DeclarableOpsTests10, pad_tests20) {
+
+    NDArray<float> input   ('c', {1,5});
+    NDArray<float> paddings('c', {2,2}, {0,0,0,0});
+    NDArray<float> expected('c', {1,5}, {1., 2., 3., 4., 5.});
+    input.linspace(1.f);
+
+    nd4j::ops::pad<float> op;
+    auto results = op.execute({&input, &paddings}, {}, {1});
+
+    ASSERT_EQ(ND4J_STATUS_OK, results->status());
+
+    NDArray<float>* result = results->at(0);    
+
+    ASSERT_TRUE(expected.isSameShapeStrict(result));
+    ASSERT_TRUE(expected.equalsTo(result));
+
+    delete results;
+}
+
+////////////////////////////////////////////////////////////////////
+TEST_F(DeclarableOpsTests10, pad_tests21) {
+
+    NDArray<float> input   ('c', {1,3,1,5});
+    NDArray<float> paddings('c', {4,2}, {0,0, 0,1, 0,1, 0,0});
+    NDArray<float> expected('c', {1,4,2,5}, {1., 2., 3., 4., 5., 1., 2., 3., 4., 5., 6., 7., 8., 9.,10., 6., 7., 8., 9.,10.,
+                                             11.,12.,13.,14.,15.,11.,12.,13.,14.,15.,11.,12.,13.,14.,15.,11.,12.,13.,14.,15.});
+    input.linspace(1.f);
+
+    nd4j::ops::pad<float> op;
+    auto results = op.execute({&input, &paddings}, {}, {2});
+
+    ASSERT_EQ(ND4J_STATUS_OK, results->status());
+
+    NDArray<float>* result = results->at(0);    
+    // result->printIndexedBuffer();
+
+    ASSERT_TRUE(expected.isSameShapeStrict(result));
+    ASSERT_TRUE(expected.equalsTo(result));
+
+    delete results;
+}
+
+////////////////////////////////////////////////////////////////////
+TEST_F(DeclarableOpsTests10, pad_tests22) {
+
+    NDArray<float> input   ('c', {1,1});
+    NDArray<float> paddings('c', {2,2}, {0,0, 0,0});
+    NDArray<float> expected('c', {1,1}, {1.});
+    
+    input.linspace(1.f);
+
+    nd4j::ops::pad<float> op;
+    auto results = op.execute({&input, &paddings}, {}, {0});
+
+    ASSERT_EQ(ND4J_STATUS_OK, results->status());
+
+    NDArray<float>* result = results->at(0);    
+    // result->printIndexedBuffer();
+
+    ASSERT_TRUE(expected.isSameShapeStrict(result));
+    ASSERT_TRUE(expected.equalsTo(result));
+
+    delete results;
+}
+
+////////////////////////////////////////////////////////////////////
+TEST_F(DeclarableOpsTests10, pad_tests23) {
+
+    NDArray<float> input   ('c', {1,1});
+    NDArray<float> paddings('c', {2,2}, {0,0, 1,0});
+    NDArray<float> expected('c', {1,2}, {0.,1.});
+    
+    input.linspace(1.f);
+
+    nd4j::ops::pad<float> op;
+    auto results = op.execute({&input, &paddings}, {}, {0});
+
+    ASSERT_EQ(ND4J_STATUS_OK, results->status());
+
+    NDArray<float>* result = results->at(0);    
+    // result->printShapeInfo("r");
+    // expected.printShapeInfo("e");
+
+    ASSERT_TRUE(expected.isSameShapeStrict(result));
+    ASSERT_TRUE(expected.equalsTo(result));
+
+    delete results;
+}
+
+////////////////////////////////////////////////////////////////////
+TEST_F(DeclarableOpsTests10, pad_tests24) {
+
+    NDArray<float> input   ('c', {1});
+    NDArray<float> paddings('c', {1,2}, {0,0});
+    NDArray<float> expected('c', {1}, {1.});
+    
+    input.linspace(1.f);
+
+    nd4j::ops::pad<float> op;
+    auto results = op.execute({&input, &paddings}, {}, {0});
+
+    ASSERT_EQ(ND4J_STATUS_OK, results->status());
+
+    NDArray<float>* result = results->at(0);    
+    
+    ASSERT_TRUE(expected.isSameShapeStrict(result));
+    ASSERT_TRUE(expected.equalsTo(result));
+
+    delete results;
+}
+
+////////////////////////////////////////////////////////////////////
+TEST_F(DeclarableOpsTests10, pad_tests25) {
+
+    NDArray<float> input   ('c', {1});
+    NDArray<float> paddings('c', {1,2}, {1,1});
+    NDArray<float> expected('c', {3}, {1.,1.,1});
+    
+    input.linspace(1.f);
+
+    nd4j::ops::pad<float> op;
+    auto results = op.execute({&input, &paddings}, {}, {2});
+
+    ASSERT_EQ(ND4J_STATUS_OK, results->status());
+
+    NDArray<float>* result = results->at(0);        
+
+    ASSERT_TRUE(expected.isSameShapeStrict(result));
+    ASSERT_TRUE(expected.equalsTo(result));
+
+    delete results;
+}
+
+////////////////////////////////////////////////////////////////////
+TEST_F(DeclarableOpsTests10, pad_tests26) {
+
+    NDArray<float> input   ('c', {1});
+    NDArray<float> paddings('c', {1,2}, {3,2});
+    NDArray<float> expected('c', {6}, {0., 0., 0., 1., 0., 0.});
+    
+    input.linspace(1.f);
+
+    nd4j::ops::pad<float> op;
+    auto results = op.execute({&input, &paddings}, {}, {0});
+
+    ASSERT_EQ(ND4J_STATUS_OK, results->status());
+
+    NDArray<float>* result = results->at(0);        
+
+    ASSERT_TRUE(expected.isSameShapeStrict(result));
+    ASSERT_TRUE(expected.equalsTo(result));
+
+    delete results;
+}
+
+////////////////////////////////////////////////////////////////////
+TEST_F(DeclarableOpsTests10, batchnorm_new_test1) {
+    
+    NDArray<double> input   ('c', {2,3,4});
+    NDArray<double> mean    ('c', {4});
+    NDArray<double> variance('c', {4});
+    NDArray<double> gamma   ('c', {4});
+    NDArray<double> beta    ('c', {4});
+    
+    NDArray<double> expected('c', {2,3,4}, {-0.52733537,-0.35763144,-0.18792751,-0.01822358, 0.15148035, 0.32118428, 0.49088821, 0.66059214, 0.83029607, 1.        , 1.16970393, 1.33940786,
+                                            1.50911179, 1.67881572, 1.84851965, 2.01822358, 2.18792751, 2.35763144, 2.52733537, 2.6970393 , 2.86674323, 3.03644717, 3.2061511 , 3.37585503});
+
+    input.linspace(0.1, 0.1);
+    mean.assign(1.);
+    variance.assign(0.5);
+    gamma.assign(1.2);
+    beta.assign(1.);
+
+    nd4j::ops::batchnorm_new<double> op;
+
+    ResultSet<double>* results = op.execute({&input, &mean, &variance, &gamma, &beta}, {1e-5}, {1,1});
+
+    ASSERT_EQ(ND4J_STATUS_OK, results->status());
+
+    NDArray<double>* output = results->at(0);    
+
+    ASSERT_TRUE(expected.isSameShapeStrict(output));
+    ASSERT_TRUE(expected.equalsTo(output));
+
+    delete results;
+}
+
+////////////////////////////////////////////////////////////////////
+TEST_F(DeclarableOpsTests10, batchnorm_new_test2) {
+    
+    NDArray<double> input   ('c', {2,3,4});
+    NDArray<double> mean    ('c', {3}, {1.05, 1.1, 1.15});
+    NDArray<double> variance('c', {3}, {0.5, 0.6, 0.7});
+    NDArray<double> gamma   ('c', {3}, {1.2, 1.3, 1.4});
+    NDArray<double> beta    ('c', {3}, {0.1, 0.2, 0.3});
+    
+    NDArray<double> expected('c', {2,3,4}, {-1.51218734,-1.34248341,-1.17277948,-1.00307555,-0.80696728,-0.6391394 ,-0.47131152,-0.30348364,-0.11832703, 0.04900378, 0.21633459, 0.38366541,
+                                            0.52425983, 0.69396376, 0.86366769, 1.03337162, 1.20696728, 1.37479516, 1.54262304, 1.71045092, 1.8896427 , 2.05697351, 2.22430432, 2.39163513,});
+
+    input.linspace(0.1, 0.1);
+    
+    nd4j::ops::batchnorm_new<double> op;
+
+    ResultSet<double>* results = op.execute({&input, &mean, &variance, &gamma, &beta}, {1e-5}, {1,1,1});
+
+    ASSERT_EQ(ND4J_STATUS_OK, results->status());
+
+    NDArray<double>* output = results->at(0);    
+
+    ASSERT_TRUE(expected.isSameShapeStrict(output));
+    ASSERT_TRUE(expected.equalsTo(output));
+
+    delete results;
+}
+
+////////////////////////////////////////////////////////////////////
+TEST_F(DeclarableOpsTests10, batchnorm_new_test3) {
+   
+    NDArray<double> input   ('c', {2,3,4});
+    NDArray<double> mean    ('c', {2,1,4}, {1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4});
+    NDArray<double> variance('c', {2,1,4}, {0.5, 0.6, 0.7, 0.8, 0.9, 1., 1.1, 1.2});
+    NDArray<double> gamma   ('c', {2,1,4}, {1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9});
+    NDArray<double> beta    ('c', {2,1,4}, {0.1, 0.2, 0.3, 0.4, 0.5, 0.66, 0.7, 0.8});
+    
+    NDArray<double> expected('c', {2,3,4}, {-1.51218734,-1.31045092,-1.12231189,-0.9416324 ,-0.83337162,-0.6391394 ,-0.45298865,-0.2708162 ,-0.1545559 , 0.03217212, 0.21633459, 0.4,
+                                            0.58432694, 0.82999915, 0.95743373, 1.14688951, 1.25894242, 1.50999575, 1.64392367, 1.84066852, 1.93355791, 2.18999235, 2.33041362, 2.53444754});
+
+    input.linspace(0.1, 0.1);
+    
+    nd4j::ops::batchnorm_new<double> op;
+
+    ResultSet<double>* results = op.execute({&input, &mean, &variance, &gamma, &beta}, {1e-5}, {1,1,0,2});
+
+    ASSERT_EQ(ND4J_STATUS_OK, results->status());
+
+    NDArray<double>* output = results->at(0);    
+
+    ASSERT_TRUE(expected.isSameShapeStrict(output));
+    ASSERT_TRUE(expected.equalsTo(output));
+
+    delete results;
+}
+
+
+

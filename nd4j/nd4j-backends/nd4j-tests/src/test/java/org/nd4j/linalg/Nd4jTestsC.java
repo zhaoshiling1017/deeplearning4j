@@ -326,8 +326,6 @@ public class Nd4jTestsC extends BaseNd4jTest {
         INDArray arrTransposeAssertion = arr.transpose().mmul(arr2);
         MMulTranspose mMulTranspose = MMulTranspose.builder()
                 .transposeA(true)
-                .a(arr)
-                .b(arr2)
                 .build();
 
         INDArray testResult = arr.mmul(arr2,mMulTranspose);
@@ -337,8 +335,6 @@ public class Nd4jTestsC extends BaseNd4jTest {
         INDArray bTransposeAssertion = arr.mmul(arr2.transpose());
         mMulTranspose = MMulTranspose.builder()
                 .transposeB(true)
-                .a(arr)
-                .b(arr2)
                 .build();
 
         INDArray bTest = arr.mmul(arr2,mMulTranspose);
@@ -404,8 +400,6 @@ public class Nd4jTestsC extends BaseNd4jTest {
         INDArray assertion = Nd4j.create(new double[][] {{14, 32}, {32, 77}});
         MMulTranspose mMulTranspose = MMulTranspose.builder()
           .transposeB(true)
-          .a(arr)
-          .b(arr)
           .build();
 
         DynamicCustomOp op = new Mmul(arr, arr, z, mMulTranspose);
@@ -1743,15 +1737,15 @@ public class Nd4jTestsC extends BaseNd4jTest {
 
     @Test
     public void testInplaceTranspose() {
-        INDArray test = Nd4j.rand(34, 484);
+        INDArray test = Nd4j.rand(3, 4);
+        INDArray orig = test.dup();
         INDArray transposei = test.transposei();
 
-        for (int i = 0; i < test.rows(); i++) {
-            for (int j = 0; j < test.columns(); j++) {
-                assertEquals(test.getDouble(i, j), transposei.getDouble(j, i), 1e-1);
+        for (int i = 0; i < orig.rows(); i++) {
+            for (int j = 0; j < orig.columns(); j++) {
+                assertEquals(orig.getDouble(i, j), transposei.getDouble(j, i), 1e-1);
             }
         }
-
     }
 
     @Test
@@ -3185,60 +3179,6 @@ public class Nd4jTestsC extends BaseNd4jTest {
             assertEquals(dupany.length(), dupany.data().length());
         }
     }
-
-    @Test
-    public void testTensorStats() {
-        List<Pair<INDArray, String>> testInputs = NDArrayCreationUtil.getAllTestMatricesWithShape(9, 13, 123);
-
-        for (Pair<INDArray, String> pair : testInputs) {
-            INDArray arr = pair.getFirst();
-            String msg = pair.getSecond();
-
-            val nTAD0 = arr.tensorssAlongDimension(0);
-            val nTAD1 = arr.tensorssAlongDimension(1);
-
-            OpExecutionerUtil.Tensor1DStats t0 = OpExecutionerUtil.get1DTensorStats(arr, 0);
-            OpExecutionerUtil.Tensor1DStats t1 = OpExecutionerUtil.get1DTensorStats(arr, 1);
-
-            assertEquals(nTAD0, t0.getNumTensors());
-            assertEquals(nTAD1, t1.getNumTensors());
-
-            INDArray tFirst0 = arr.tensorAlongDimension(0, 0);
-            INDArray tSecond0 = arr.tensorAlongDimension(1, 0);
-
-            INDArray tFirst1 = arr.tensorAlongDimension(0, 1);
-            INDArray tSecond1 = arr.tensorAlongDimension(1, 1);
-
-            assertEquals(tFirst0.offset(), t0.getFirstTensorOffset());
-            assertEquals(tFirst1.offset(), t1.getFirstTensorOffset());
-            long separation0 = tSecond0.offset() - tFirst0.offset();
-            long separation1 = tSecond1.offset() - tFirst1.offset();
-            assertEquals(separation0, t0.getTensorStartSeparation());
-            assertEquals(separation1, t1.getTensorStartSeparation());
-
-            for (int i = 0; i < nTAD0; i++) {
-                INDArray tad0 = arr.tensorAlongDimension(i, 0);
-                assertEquals(tad0.length(), t0.getTensorLength());
-                assertEquals(tad0.elementWiseStride(), t0.getElementWiseStride());
-
-                long offset = tad0.offset();
-                long calcOffset = t0.getFirstTensorOffset() + i * t0.getTensorStartSeparation();
-                assertEquals(offset, calcOffset);
-            }
-
-            for (int i = 0; i < nTAD1; i++) {
-                INDArray tad1 = arr.tensorAlongDimension(i, 1);
-                assertEquals(tad1.length(), t1.getTensorLength());
-                assertEquals(tad1.elementWiseStride(), t1.getElementWiseStride());
-
-                long offset = tad1.offset();
-                long calcOffset = t1.getFirstTensorOffset() + i * t1.getTensorStartSeparation();
-                assertEquals(offset, calcOffset);
-            }
-        }
-    }
-
-
 
     @Test
     @Ignore
@@ -6952,6 +6892,106 @@ public class Nd4jTestsC extends BaseNd4jTest {
         INDArray arr = in.get(idx1);
         long[] expShape = new long[]{2,1,2,2};
         assertArrayEquals(expShape, arr.shape());
+    }
+
+    @Test
+    public void testTransposei(){
+        INDArray arr = Nd4j.linspace(1,12,12).reshape('c',3,4);
+
+        INDArray ti = arr.transposei();
+        assertArrayEquals(new long[]{4,3}, ti.shape());
+        assertArrayEquals(new long[]{4,3}, arr.shape());
+
+        assertTrue(arr == ti);  //Should be same object
+    }
+
+    @Test
+    public void testINDArrayMmulWithTranspose(){
+        Nd4j.getRandom().setSeed(12345);
+        INDArray a = Nd4j.rand(2,5);
+        INDArray b = Nd4j.rand(5,3);
+        INDArray exp = a.mmul(b).transpose();
+        INDArray act = a.mmul(b, MMulTranspose.builder().transposeResult(true).build());
+
+        assertEquals(exp, act);
+
+        a = Nd4j.rand(5,2);
+        b = Nd4j.rand(5,3);
+        exp = a.transpose().mmul(b);
+        act = a.mmul(b, MMulTranspose.builder().transposeA(true).build());
+        assertEquals(exp, act);
+
+        a = Nd4j.rand(2,5);
+        b = Nd4j.rand(3,5);
+        exp = a.mmul(b.transpose());
+        act = a.mmul(b, MMulTranspose.builder().transposeB(true).build());
+        assertEquals(exp, act);
+
+        a = Nd4j.rand(5,2);
+        b = Nd4j.rand(3,5);
+        exp = a.transpose().mmul(b.transpose());
+        act = a.mmul(b, MMulTranspose.builder().transposeA(true).transposeB(true).build());
+        assertEquals(exp, act);
+
+        a = Nd4j.rand(5,2);
+        b = Nd4j.rand(3,5);
+        exp = a.transpose().mmul(b.transpose()).transpose();
+        act = a.mmul(b, MMulTranspose.builder().transposeA(true).transposeB(true).transposeResult(true).build());
+        assertEquals(exp, act);
+    }
+
+    @Test
+    public void testInvalidOrder(){
+
+        try {
+            Nd4j.create(new int[]{1}, 'z');
+            fail("Expected failure");
+        } catch (IllegalArgumentException e){
+            assertTrue(e.getMessage().toLowerCase().contains("order"));
+        }
+
+        try {
+            Nd4j.zeros(1, 'z');
+            fail("Expected failure");
+        } catch (IllegalArgumentException e){
+            assertTrue(e.getMessage().toLowerCase().contains("order"));
+        }
+
+        try {
+            Nd4j.zeros(new int[]{1}, 'z');
+            fail("Expected failure");
+        } catch (IllegalArgumentException e){
+            assertTrue(e.getMessage().toLowerCase().contains("order"));
+        }
+
+        try {
+            Nd4j.create(new long[]{1}, 'z');
+            fail("Expected failure");
+        } catch (IllegalArgumentException e){
+            assertTrue(e.getMessage().toLowerCase().contains("order"));
+        }
+
+        try {
+            Nd4j.rand('z', 1, 1);
+            fail("Expected failure");
+        } catch (IllegalArgumentException e){
+            assertTrue(e.getMessage().toLowerCase().contains("order"));
+        }
+
+        try {
+            Nd4j.createUninitialized(new int[]{1}, 'z');
+            fail("Expected failure");
+        } catch (IllegalArgumentException e){
+            assertTrue(e.getMessage().toLowerCase().contains("order"));
+        }
+
+        try {
+            Nd4j.createUninitialized(new long[]{1}, 'z');
+            fail("Expected failure");
+        } catch (IllegalArgumentException e){
+            assertTrue(e.getMessage().toLowerCase().contains("order"));
+        }
+
     }
 
     ///////////////////////////////////////////////////////
